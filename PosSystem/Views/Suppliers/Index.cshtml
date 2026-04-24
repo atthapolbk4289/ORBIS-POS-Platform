@@ -43,13 +43,34 @@
                                     @(s.IsActive ? "ปกติ" : "ระงับ")
                                 </span>
                             </td>
-                            <td class="px-5 py-3 text-right space-x-2">
-                                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('ยืนยันการระงับผู้จำหน่ายนี้?')">
-                                    <input type="hidden" name="id" value="@s.Id" />
-                                    <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <td class="px-5 py-3 text-right" style="white-space:nowrap">
+                                @if (s.IsActive) {
+                                    <button type="button"
+                                            data-action="/Suppliers/Suspend"
+                                            data-id="@s.Id"
+                                            data-confirm="ยืนยันการระงับผู้จำหน่าย '@s.Name' นี้?"
+                                            title="ระงับ"
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all action-btn">
+                                        <i data-lucide="ban" class="w-4 h-4" style="pointer-events:none"></i>
                                     </button>
-                                </form>
+                                } else {
+                                    <button type="button"
+                                            data-action="/Suppliers/Unsuspend"
+                                            data-id="@s.Id"
+                                            data-confirm="ยืนยันการปลดระงับผู้จำหน่าย '@s.Name' นี้?"
+                                            title="ปลดระงับ"
+                                            class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 text-green-500 hover:bg-green-500 hover:text-white transition-all action-btn">
+                                        <i data-lucide="check-circle-2" class="w-4 h-4" style="pointer-events:none"></i>
+                                    </button>
+                                }
+                                <button type="button"
+                                        data-action="/Suppliers/Delete"
+                                        data-id="@s.Id"
+                                        data-confirm="ยืนยันการลบ '@s.Name' ? (หากมีใบสั่งซื้อผูกอยู่จะไม่สามาถลบได้)"
+                                        title="ลบ"
+                                        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 text-red-400 hover:bg-red-500 hover:text-white transition-all action-btn">
+                                    <i data-lucide="trash-2" class="w-4 h-4" style="pointer-events:none"></i>
+                                </button>
                             </td>
                         </tr>
                     }
@@ -104,3 +125,29 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <form id="actionForm" method="post" class="hidden">
+        <input type="hidden" id="actionId" name="id" value="" />
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const actionBtns = document.querySelectorAll('.action-btn');
+            const actionForm = document.getElementById('actionForm');
+            const actionId = document.getElementById('actionId');
+
+            actionBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const confirmMessage = this.getAttribute('data-confirm');
+                    if (confirm(confirmMessage)) {
+                        actionForm.action = this.getAttribute('data-action');
+                        actionId.value = this.getAttribute('data-id');
+                        actionForm.submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

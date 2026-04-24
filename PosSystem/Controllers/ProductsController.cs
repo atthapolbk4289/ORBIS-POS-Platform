@@ -169,6 +169,57 @@ namespace PosSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Edit(Guid id)
+        {
+            ViewData["ActiveMenu"] = "products";
+            ViewData["PageTitle"] = "แก้ไขข้อมูลสินค้า";
+            ViewData["TopIcon"] = "edit";
+
+            var branchClaim = User.FindFirst("BranchId")?.Value;
+            if (!Guid.TryParse(branchClaim, out var branchId)) return RedirectToAction(nameof(Index));
+
+            var product = await _sql.QueryFirstOrDefaultAsync<dynamic>(
+                "SELECT * FROM Products WHERE Id = @Id AND BranchId = @BranchId",
+                new[] { new SqlParameter("@Id", id), new SqlParameter("@BranchId", branchId) });
+
+            if (product == null) return NotFound();
+
+            var categories = await _sql.QueryAsync<CategoryOption>(
+                @"SELECT Id, Name FROM Categories WHERE BranchId = @BranchId AND IsActive = 1 ORDER BY DisplayOrder, Name",
+                new[] { new SqlParameter("@BranchId", branchId) });
+
+            ViewData["Categories"] = categories;
+            return View(product);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(Guid id, CreateProductInput input)
+        {
+            try {
+                await _sql.ExecuteAsync(
+                    @"UPDATE Products SET 
+                        CategoryId=@CatId, Name=@Name, Sku=@Sku, Barcode=@Barcode, 
+                        Price=@Price, CostPrice=@Cost, Unit=@Unit, IsActive=@Active, 
+                        UpdatedAt=GETUTCDATE() 
+                      WHERE Id=@Id",
+                    new[] {
+                        new SqlParameter("@Id", id),
+                        new SqlParameter("@CatId", Guid.Parse(input.CategoryId)),
+                        new SqlParameter("@Name", input.Name.Trim()),
+                        new SqlParameter("@Sku", input.Sku?.Trim() ?? ""),
+                        new SqlParameter("@Barcode", input.Barcode?.Trim() ?? ""),
+                        new SqlParameter("@Price", input.Price),
+                        new SqlParameter("@Cost", input.CostPrice),
+                        new SqlParameter("@Unit", input.Unit?.Trim() ?? "ชิ้น"),
+                        new SqlParameter("@Active", input.IsActive)
+                    });
+                TempData["Success"] = "แก้ไขข้อมูลสินค้าสำเร็จ";
+            } catch (Exception ex) {
+                TempData["Error"] = "ผิดพลาด: " + ex.Message;
+            }
+            return RedirectToAction(nameof(Index));
+        }
         public class ProductRow
         {
             public Guid Id { get; set; }
@@ -181,6 +232,7 @@ namespace PosSystem.Controllers
             public bool IsActive { get; set; }
             public string? CategoryName { get; set; }
         }
+
 
         public class CategoryRow
         {

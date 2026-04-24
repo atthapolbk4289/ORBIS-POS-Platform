@@ -32,7 +32,7 @@ namespace PosSystem.Controllers
         /// แสดงหน้าจัดการสินค้าคงคลัง พร้อมระบบค้นหาและกรองสินค้าสต็อกต่ำ
         /// </summary>
         [HttpGet]
-        public IActionResult Index(Guid? branchIdParam, string? search, bool lowStockOnly = false)
+        public IActionResult Index(Guid? branchIdParam, string? search, bool lowStockOnly = false, string? statusFilter = null, string? sortBy = null)
         {
             var branchId = branchIdParam ?? GetBranchId();
             ViewData["ActiveMenu"] = "stock-inventory";
@@ -63,6 +63,27 @@ namespace PosSystem.Controllers
             if (lowStockOnly)
                 sql += " AND (ps.PhysicalQty - ps.ReservedQty <= ps.MinAlertQty)";
 
+            if (!string.IsNullOrEmpty(statusFilter)) {
+                if (statusFilter == "IN_STOCK") sql += " AND (ps.PhysicalQty - ps.ReservedQty > 0)";
+                else if (statusFilter == "OUT_OF_STOCK") sql += " AND (ps.PhysicalQty - ps.ReservedQty <= 0)";
+                // LOW_STOCK is already handled or can be handled as well:
+                else if (statusFilter == "LOW_STOCK") sql += " AND (ps.PhysicalQty - ps.ReservedQty <= ps.MinAlertQty AND ps.PhysicalQty - ps.ReservedQty > 0)";
+            }
+
+            // จัดเรียง
+            if (!string.IsNullOrEmpty(sortBy)) {
+                sql += sortBy switch {
+                    "COST_ASC" => " ORDER BY p.CostPrice ASC",
+                    "COST_DESC" => " ORDER BY p.CostPrice DESC",
+                    "QTY_ASC" => " ORDER BY (ps.PhysicalQty - ps.ReservedQty) ASC",
+                    "QTY_DESC" => " ORDER BY (ps.PhysicalQty - ps.ReservedQty) DESC",
+                    "VALUE_DESC" => " ORDER BY (ps.PhysicalQty * p.CostPrice) DESC",
+                    _ => " ORDER BY p.Name ASC"
+                };
+            } else {
+                sql += " ORDER BY p.Name ASC";
+            }
+
             var sqlHelper = HttpContext.RequestServices.GetService(typeof(PosSystem.Helpers.ISqlHelper)) as PosSystem.Helpers.ISqlHelper;
             var items = sqlHelper != null ? sqlHelper.QueryAsync<StockItemData>(sql, parameters.ToArray()).Result : new List<StockItemData>();
 
@@ -70,6 +91,8 @@ namespace PosSystem.Controllers
             var vm = new StockIndexViewModel {
                 Search = search,
                 LowStockOnly = lowStockOnly,
+                StatusFilter = statusFilter,
+                SortBy = sortBy,
                 TotalStockValue = items.Sum(x => x.StockValue),
                 LowStockCount = items.Count(x => x.IsLowStock),
                 OutOfStockCount = items.Count(x => x.AvailableQty <= 0),
@@ -154,13 +177,22 @@ namespace PosSystem.Controllers
         /// แสดงหน้าการรับสินค้า (Stock In / Receive)
         /// </summary>
         [HttpGet]
-        public IActionResult Receive()
+        public async Task<IActionResult> Receive()
         {
+            var branchId = GetBranchId();
             ViewData["ActiveMenu"] = "stock-receive";
-            ViewData["PageTitle"] = "ใบเบิกสินค้า / รับสินค้า";
-            ViewData["TopIcon"] = "package-check";
+            ViewData["PageTitle"] = "รับสินค้าเข้าสต็อก";
+            ViewData["TopIcon"] = "package-plus";
+
+            // ดึงรายการสินค้าทั้งหมดที่เปิดใช้งานอยู่
+            var products = await _sql.QueryAsync<ProductDropdownDto>(
+                "SELECT Id, Name, Sku FROM Products WHERE BranchId=@BId AND IsActive=1 ORDER BY Name",
+                new[] { new SqlParameter("@BId", branchId) });
+
+            ViewData["Products"] = products;
             return View();
         }
+
 
         /// <summary>
         /// ประมวลผลการรับสินค้า
@@ -172,25 +204,49 @@ namespace PosSystem.Controllers
         /// แสดงหน้าแจ้งทำลายสินค้าหรือสินค้าชำรุด (Damage)
         /// </summary>
         [HttpGet]
-        public IActionResult Damage()
+        public async Task<IActionResult> Damage()
         {
+            var branchId = GetBranchId();
             ViewData["ActiveMenu"] = "stock-damage";
             ViewData["PageTitle"] = "แจ้งทำลายสินค้า";
             ViewData["TopIcon"] = "trash-2";
+
+            var products = await _sql.QueryAsync<ProductDropdownDto>(
+                @"SELECT p.Id, p.Name, p.Sku, ps.PhysicalQty 
+                  FROM Products p 
+                  JOIN ProductStocks ps ON p.Id = ps.ProductId
+                  WHERE p.BranchId=@BId AND p.IsActive=1 AND ps.PhysicalQty > 0
+                  ORDER BY p.Name",
+                new[] { new SqlParameter("@BId", branchId) });
+
+            ViewData["Products"] = products;
             return View();
         }
+
 
         /// <summary>
         /// แสดงหน้าตรวจนับสต็อกสินค้า (Stock Counting)
         /// </summary>
         [HttpGet]
-        public IActionResult Count()
+        public async Task<IActionResult> Count()
         {
+            var branchId = GetBranchId();
             ViewData["ActiveMenu"] = "stock-count";
             ViewData["PageTitle"] = "ตรวจนับสต็อก";
             ViewData["TopIcon"] = "clipboard-check";
+
+            var products = await _sql.QueryAsync<ProductDropdownDto>(
+                @"SELECT p.Id, p.Name, p.Sku, ps.PhysicalQty 
+                  FROM Products p 
+                  JOIN ProductStocks ps ON p.Id = ps.ProductId
+                  WHERE p.BranchId=@BId AND p.IsActive=1
+                  ORDER BY p.Name",
+                new[] { new SqlParameter("@BId", branchId) });
+
+            ViewData["Products"] = products;
             return View();
         }
+
 
         /// <summary>
         /// รายการแจ้งเตือนสินค้าใกล้หมด

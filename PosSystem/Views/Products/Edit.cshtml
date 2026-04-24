@@ -1,0 +1,81 @@
+@model dynamic
+@{ ViewData["ActiveMenu"] = "products"; ViewData["PageTitle"] = "แก้ไขสินค้า"; Layout = "_Layout"; }
+
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+    <div class="bg-slate-800 px-8 py-10 text-white relative overflow-hidden">
+      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+      <div class="relative z-10 flex items-center gap-4">
+        <div class="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+          <i data-lucide="package" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black">แก้ไขข้อมูลสินค้า</h2>
+          <p class="text-slate-300 text-sm mt-1">ปรับปรุงรายละเอียดพื้นฐานและราคาของสินค้า</p>
+        </div>
+      </div>
+    </div>
+
+    <form asp-action="Edit" method="post" class="p-8 space-y-6">
+      <input type="hidden" name="Id" value="@Model.Id" />
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">ชื่อสินค้า</label>
+          <input type="text" name="Name" value="@Model.Name" required 
+                 class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">SKU</label>
+          <input type="text" name="Sku" value="@Model.Sku"
+                 class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">บาร์โค้ด</label>
+          <input type="text" name="Barcode" value="@Model.Barcode"
+                 class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">ราคาทุน</label>
+          <input type="number" step="0.01" name="CostPrice" value="@Model.CostPrice"
+                 class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">ราคาขาย</label>
+          <input type="number" step="0.01" name="Price" value="@Model.Price"
+                 class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700 font-bold text-blue-600" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">หมวดหมู่</label>
+          <select name="CategoryId" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700">
+            @foreach (var cat in (IEnumerable<dynamic>)ViewData["Categories"] ?? new List<dynamic>()) {
+              <option value="@cat.Id" selected="@(cat.Id == Model.CategoryId)">@cat.Name</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">สถานะ</label>
+          <select name="IsActive" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700">
+            <option value="true" selected="@(Model.IsActive == true)">เปิดใช้งาน</option>
+            <option value="false" selected="@(Model.IsActive == false)">ปิดการใช้งาน</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pt-6 flex gap-4">
+        <a asp-controller="Stock" asp-action="Index" class="flex-1 py-4 rounded-2xl border border-slate-200 text-slate-500 font-bold text-center hover:bg-slate-50 transition-all">
+          ยกเลิก
+        </a>
+        <button type="submit" class="flex-[2] py-4 rounded-2xl bg-blue-600 text-white font-bold text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 hover:shadow-blue-200 active:scale-[0.98] transition-all">
+          บันทึกการแก้ไข
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

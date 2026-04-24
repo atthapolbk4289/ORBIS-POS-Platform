@@ -1,26 +1,143 @@
-@{ Layout = "_Layout"; }
-<div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <div><h2 class="text-xl font-bold text-gray-800">ตรวจนับสต็อก</h2></div>
-    <button class="px-4 py-2 rounded-lg text-white text-sm" style="background:#2D6BE4">+ เริ่มตรวจนับ</button>
-  </div>
-  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-    <table class="w-full text-sm">
-      <thead style="background:#F8FAFC">
-        <tr class="text-left text-xs text-gray-500 uppercase">
-          <th class="px-5 py-3">รอบตรวจนับ</th>
-          <th class="px-5 py-3">วันที่</th>
-          <th class="px-5 py-3 text-right">รายการทั้งหมด</th>
-          <th class="px-5 py-3 text-right">ส่วนต่าง</th>
-          <th class="px-5 py-3">สถานะ</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="5" class="px-5 py-12 text-center text-gray-400">
-          <i data-lucide="clipboard-check" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
-          <p>ยังไม่มีรอบการตรวจนับ</p>
-        </td></tr>
-      </tbody>
-    </table>
+@{ ViewData["ActiveMenu"] = "stock-count"; ViewData["PageTitle"] = "ตรวจนับสต็อก"; Layout = "_Layout"; }
+
+<div class="max-w-5xl mx-auto">
+  <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+    <div class="bg-emerald-600 px-8 py-10 text-white relative overflow-hidden">
+      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+      <div class="relative z-10 flex items-center gap-4">
+        <div class="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+          <i data-lucide="clipboard-check" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black">ตรวจนับสต็อกสินค้า</h2>
+          <p class="text-emerald-100 text-sm mt-1">ปรับปรุงจำนวนสินค้าให้ตรงตามที่นับได้จริงในหน้าร้าน</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-8">
+      <div class="mb-8 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-amber-500 mt-0.5"></i>
+        <div class="text-sm text-amber-800">
+          <p class="font-bold">คำแนะนำ:</p>
+          <p>การตรวจนับสต็อกจะปรับจำนวนสินค้าในระบบให้เท่ากับ "จำนวนที่นับได้จริง" ทันที โปรดตรวจสอบจำนวนให้ถูกต้องก่อนกดบันทึก</p>
+        </div>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-400 text-xs uppercase tracking-wider">
+            <th class="px-4 py-3">สินค้า</th>
+            <th class="px-4 py-3 text-right">จำนวนในระบบ</th>
+            <th class="px-4 py-3 text-center" style="width: 200px;">จำนวนที่นับได้</th>
+            <th class="px-4 py-3 text-right">ผลต่าง</th>
+            <th class="px-4 py-3 text-right">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          @foreach (var item in (IEnumerable<PosSystem.Models.ViewModels.ProductDropdownDto>)ViewData["Products"] ?? new List<PosSystem.Models.ViewModels.ProductDropdownDto>()) {
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-4 py-4">
+                <div class="font-bold text-slate-700">@item.Name</div>
+                <div class="text-xs text-slate-400">@item.Sku</div>
+              </td>
+              <td class="px-4 py-4 text-right font-medium text-slate-500">@item.PhysicalQty</td>
+              <td class="px-4 py-4">
+                <input type="number" id="actual-@item.Id" value="@item.PhysicalQty" min="0"
+                       oninput="updateDiff('@item.Id', @item.PhysicalQty)"
+                       class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-center focus:outline-none focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition-all font-bold text-slate-700" />
+              </td>
+              <td class="px-4 py-4 text-right">
+                <span id="diff-@item.Id" class="font-bold text-slate-400">0</span>
+              </td>
+              <td class="px-4 py-4 text-right">
+                <button onclick="saveCount('@item.Id')" 
+                        id="btn-@item.Id"
+                        class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 font-bold hover:bg-emerald-600 hover:text-white transition-all text-xs">
+                  บันทึก
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
+
+<div id="toast" class="fixed bottom-8 right-8 z-[100] transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+  <div class="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+    <div id="toastIcon" class="w-8 h-8 rounded-full flex items-center justify-center"></div>
+    <span id="toastMsg" class="font-medium"></span>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  function updateDiff(id, systemQty) {
+    const actual = parseInt(document.getElementById('actual-' + id).value) || 0;
+    const diff = actual - systemQty;
+    const el = document.getElementById('diff-' + id);
+    el.textContent = (diff > 0 ? '+' : '') + diff;
+    
+    if (diff > 0) el.className = 'font-bold text-emerald-600';
+    else if (diff < 0) el.className = 'font-bold text-rose-600';
+    else el.className = 'font-bold text-slate-400';
+  }
+
+  async function saveCount(id) {
+    const actual = parseInt(document.getElementById('actual-' + id).value) || 0;
+    const btn = document.getElementById('btn-' + id);
+    
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+      const res = await fetch('/api/stock/count', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: id, actualQuantity: actual })
+      });
+      const result = await res.json();
+      if (result.success) {
+        showToast('บันทึกผลการตรวจนับสำเร็จ', 'success');
+        btn.className = 'px-4 py-2 rounded-xl bg-slate-100 text-slate-400 font-bold cursor-default text-xs';
+        btn.textContent = 'บันทึกแล้ว';
+        document.getElementById('actual-' + id).disabled = true;
+      } else {
+        showToast(result.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'บันทึก';
+      }
+    } catch (err) {
+      showToast('เกิดข้อผิดพลาด', 'error');
+      btn.disabled = false;
+      btn.textContent = 'บันทึก';
+    }
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    const text = document.getElementById('toastMsg');
+    
+    text.textContent = msg;
+    if (type === 'success') {
+      icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500 text-white';
+      icon.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i>';
+    } else {
+      icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-rose-500 text-white';
+      icon.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5"></i>';
+    }
+    
+    lucide.createIcons();
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3000);
+  }
+</script>
+}

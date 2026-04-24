@@ -1,132 +1,226 @@
 @model PosSystem.Models.ViewModels.StockIndexViewModel
-@{ ViewData["ActiveMenu"] = "stock-inventory"; ViewData["PageTitle"] = "สินค้าคงคลัง"; Layout = "_Layout"; }
+@{ 
+    ViewData["ActiveMenu"] = "stock-inventory"; 
+    ViewData["PageTitle"] = "สินค้าคงคลัง"; 
+    Layout = "_Layout"; 
+}
 
-<!-- Summary Cards -->
-<div class="grid grid-cols-3 gap-4 mb-6">
-  <div class="bg-white rounded-xl p-5 shadow-sm">
-    <p class="text-gray-500 text-xs">มูลค่าสต็อกรวม</p>
-    <p class="text-2xl font-bold text-gray-800 mt-1">฿@Model.TotalStockValue.ToString("N2")</p>
+<div class="space-y-6">
+  <!-- Header Actions -->
+  <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+    <div>
+      <h3 class="text-xl font-bold text-slate-800">จัดการรายการสต็อก</h3>
+      <p class="text-sm text-slate-400 mt-1">ติดตามและปรับปรุงจำนวนสินค้าในคลังของสาขา</p>
+    </div>
+    <div class="flex gap-3">
+      <a asp-action="Receive" class="px-5 py-3 rounded-2xl bg-blue-50 text-blue-600 font-bold text-sm hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2">
+        <i data-lucide="package-plus" class="w-4 h-4"></i> รับสินค้าเข้า
+      </a>
+      <a asp-action="Damage" class="px-5 py-3 rounded-2xl bg-rose-50 text-rose-500 font-bold text-sm hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2">
+        <i data-lucide="trash-2" class="w-4 h-4"></i> แจ้งทำลาย
+      </a>
+      <a asp-action="Count" class="px-5 py-3 rounded-2xl bg-emerald-50 text-emerald-600 font-bold text-sm hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> ตรวจนับสต็อก
+      </a>
+    </div>
   </div>
-  <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-amber-400">
-    <p class="text-gray-500 text-xs">สินค้าใกล้หมด</p>
-    <p class="text-2xl font-bold text-amber-600 mt-1">@Model.LowStockCount</p>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 relative overflow-hidden group">
+      <div class="absolute top-0 right-0 p-8 opacity-[0.05] group-hover:scale-110 transition-transform">
+        <i data-lucide="banknote" class="w-20 h-20 text-blue-600"></i>
+      </div>
+      <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">มูลค่าสต็อกรวม</p>
+      <p class="text-3xl font-black text-slate-800 mt-2">฿@Model.TotalStockValue.ToString("N2")</p>
+    </div>
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-l-8 border-amber-400 relative overflow-hidden group">
+      <div class="absolute top-0 right-0 p-8 opacity-[0.05] group-hover:scale-110 transition-transform">
+        <i data-lucide="alert-triangle" class="w-20 h-20 text-amber-600"></i>
+      </div>
+      <p class="text-amber-600 text-xs font-bold uppercase tracking-wider">สินค้าใกล้หมด</p>
+      <p class="text-3xl font-black text-slate-800 mt-2">@Model.LowStockCount รายการ</p>
+    </div>
+    <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 border-l-8 border-rose-400 relative overflow-hidden group">
+      <div class="absolute top-0 right-0 p-8 opacity-[0.05] group-hover:scale-110 transition-transform">
+        <i data-lucide="x-circle" class="w-20 h-20 text-rose-600"></i>
+      </div>
+      <p class="text-rose-600 text-xs font-bold uppercase tracking-wider">สินค้าหมด</p>
+      <p class="text-3xl font-black text-slate-800 mt-2">@Model.OutOfStockCount รายการ</p>
+    </div>
   </div>
-  <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-red-400">
-    <p class="text-gray-500 text-xs">สินค้าหมด</p>
-    <p class="text-2xl font-bold text-red-600 mt-1">@Model.OutOfStockCount</p>
+
+  <!-- Search & Filter -->
+  <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+    <form method="get" class="flex flex-col md:flex-row gap-4 items-center">
+      <div class="relative flex-[2] group w-full">
+        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-500 transition-colors"></i>
+        <input name="search" value="@Model.Search" class="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white focus:border-blue-500 transition-all text-slate-700" placeholder="ค้นหาสินค้าจากชื่อหรือ SKU..."/>
+      </div>
+      
+      <div class="w-full md:w-auto flex-1">
+        <select name="statusFilter" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white transition-all text-slate-700 font-medium">
+          <option value="" selected="@(string.IsNullOrEmpty(Model.StatusFilter) ? "selected" : null)">สถานะทั้งหมด</option>
+          <option value="IN_STOCK" selected="@(Model.StatusFilter == "IN_STOCK" ? "selected" : null)">พร้อมขาย</option>
+          <option value="LOW_STOCK" selected="@(Model.StatusFilter == "LOW_STOCK" ? "selected" : null)">ใกล้หมด</option>
+          <option value="OUT_OF_STOCK" selected="@(Model.StatusFilter == "OUT_OF_STOCK" ? "selected" : null)">สินค้าหมด</option>
+        </select>
+      </div>
+
+      <div class="w-full md:w-auto flex-1">
+        <select name="sortBy" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white transition-all text-slate-700 font-medium">
+          <option value="" selected="@(string.IsNullOrEmpty(Model.SortBy) ? "selected" : null)">เรียงตามชื่อ (ก-ฮ)</option>
+          <option value="COST_ASC" selected="@(Model.SortBy == "COST_ASC" ? "selected" : null)">ราคาทุน (น้อย-มาก)</option>
+          <option value="COST_DESC" selected="@(Model.SortBy == "COST_DESC" ? "selected" : null)">ราคาทุน (มาก-น้อย)</option>
+          <option value="QTY_DESC" selected="@(Model.SortBy == "QTY_DESC" ? "selected" : null)">คงเหลือ (มาก-น้อย)</option>
+          <option value="QTY_ASC" selected="@(Model.SortBy == "QTY_ASC" ? "selected" : null)">คงเหลือ (น้อย-มาก)</option>
+          <option value="VALUE_DESC" selected="@(Model.SortBy == "VALUE_DESC" ? "selected" : null)">มูลค่ารวม (มาก-น้อย)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="w-full md:w-auto px-10 py-3.5 rounded-2xl bg-blue-600 text-white font-bold shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">
+        ค้นหา
+      </button>
+    </form>
   </div>
-</div>
 
-<!-- Filter Bar -->
-<form method="get">
-<div class="bg-white rounded-xl p-4 mb-4 shadow-sm flex gap-3 items-center">
-  <input name="search" value="@Model.Search" class="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="ค้นหาสินค้า, SKU..."/>
-  <label class="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
-    <input type="checkbox" name="lowStockOnly" value="true" @(Model.LowStockOnly ? "checked" : "") /> สต็อกต่ำเท่านั้น
-  </label>
-  <button type="submit" class="px-4 py-2 rounded-lg text-white text-sm" style="background:#2D6BE4">ค้นหา</button>
-</div>
-</form>
-
-<div id="stockToast" class="fixed top-4 right-4 z-50 hidden max-w-sm rounded-xl px-4 py-3 shadow-xl text-sm font-medium" role="alert"></div>
-
-<!-- Stock Table -->
-<div class="bg-white rounded-xl shadow-sm overflow-hidden">
-  <table class="w-full text-sm">
-    <thead style="background:#F8FAFC">
-      <tr class="text-left text-gray-500 text-xs uppercase">
-        <th class="px-4 py-3">สินค้า</th>
-        <th class="px-4 py-3 text-right">ของจริง</th>
-        <th class="px-4 py-3 text-right">จองแล้ว</th>
-        <th class="px-4 py-3 text-right">พร้อมขาย</th>
-        <th class="px-4 py-3 text-right">ราคาทุน</th>
-        <th class="px-4 py-3 text-right">มูลค่า</th>
-        <th class="px-4 py-3 text-center">สถานะ</th>
-        <th class="px-4 py-3">จัดการ</th>
-      </tr>
-    </thead>
-    <tbody>
-      @if (Model.StockItems.Count == 0) {
-        <tr><td colspan="8" class="px-4 py-12 text-center text-gray-400">ไม่พบรายการสินค้า</td></tr>
-      }
-      @foreach (var item in Model.StockItems) {
-        <tr class="border-t @(item.IsLowStock ? "bg-amber-50" : "") hover:bg-gray-50">
-          <td class="px-4 py-3">
-            <div class="font-medium text-gray-800">@item.ProductName</div>
-            <div class="text-xs text-gray-400">@item.Sku</div>
-          </td>
-          <td class="px-4 py-3 text-right font-medium">@item.PhysicalQty</td>
-          <td class="px-4 py-3 text-right text-orange-500">@item.ReservedQty</td>
-          <td class="px-4 py-3 text-right font-bold @(item.AvailableQty <= 0 ? "text-red-600" : "text-green-600")">
-            @item.AvailableQty
-          </td>
-          <td class="px-4 py-3 text-right">฿@item.CostPrice.ToString("N2")</td>
-          <td class="px-4 py-3 text-right">฿@item.StockValue.ToString("N2")</td>
-          <td class="px-4 py-3 text-center">
-            @if (item.AvailableQty <= 0) {
-              <span class="px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium">หมด</span>
-            } else if (item.IsLowStock) {
-              <span class="px-2 py-1 bg-amber-100 text-amber-600 rounded-full text-xs font-medium">ใกล้หมด</span>
-            } else {
-              <span class="px-2 py-1 bg-green-100 text-green-600 rounded-full text-xs font-medium">ปกติ</span>
-            }
-          </td>
-          <td class="px-4 py-3">
-            <button onclick="openAdjust('@item.ProductId','@item.ProductName',@item.PhysicalQty)"
-                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium">
-              ปรับสต็อก
-            </button>
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+  <!-- Stock Table -->
+  <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50">
+          <tr class="text-left text-slate-400 text-[10px] font-black uppercase tracking-[0.1em]">
+            <th class="px-6 py-5">ข้อมูลสินค้า</th>
+            <th class="px-6 py-5 text-right">จำนวนทั้งหมด</th>
+            <th class="px-6 py-5 text-right">ติดจอง</th>
+            <th class="px-6 py-5 text-right">พร้อมขาย</th>
+            <th class="px-6 py-5 text-right">ราคาทุน</th>
+            <th class="px-6 py-5 text-right">มูลค่ารวม</th>
+            <th class="px-6 py-5 text-center">สถานะ</th>
+            <th class="px-6 py-5 text-right">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+          @if (Model.StockItems.Count == 0) {
+            <tr>
+              <td colspan="8" class="px-6 py-20 text-center">
+                <div class="flex flex-col items-center opacity-30">
+                  <i data-lucide="package-search" class="w-16 h-16 mb-4"></i>
+                  <p class="text-lg font-bold">ไม่พบข้อมูลสินค้าในสต็อก</p>
+                </div>
+              </td>
+            </tr>
+          }
+          @foreach (var item in Model.StockItems) {
+            <tr class="hover:bg-slate-50/50 transition-colors group @(item.IsLowStock ? "bg-amber-50/30" : "")">
+              <td class="px-6 py-4">
+                <div class="font-bold text-slate-800">@item.ProductName</div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">SKU: @item.Sku</div>
+              </td>
+              <td class="px-6 py-4 text-right font-medium text-slate-500" id="physQty-@item.ProductId">@item.PhysicalQty</td>
+              <td class="px-6 py-4 text-right">
+                <span id="resQty-@item.ProductId" class="px-2 py-1 bg-amber-50 text-amber-600 rounded-lg font-bold text-[10px]" data-val="@item.ReservedQty">@item.ReservedQty</span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <span id="availQty-@item.ProductId" class="font-black @(item.AvailableQty <= 0 ? "text-rose-600" : "text-emerald-600") text-base">@item.AvailableQty</span>
+              </td>
+              <td class="px-6 py-4 text-right text-slate-500 font-medium" id="cost-@item.ProductId" data-cost="@item.CostPrice">฿@item.CostPrice.ToString("N2")</td>
+              <td class="px-6 py-4 text-right text-slate-800 font-bold" id="val-@item.ProductId">฿@item.StockValue.ToString("N2")</td>
+              <td class="px-6 py-4 text-center" id="status-@item.ProductId">
+                @if (item.AvailableQty <= 0) {
+                  <span class="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase">Out of Stock</span>
+                } else if (item.IsLowStock) {
+                  <span class="px-3 py-1 bg-amber-50 text-amber-500 rounded-full text-[10px] font-black uppercase">Low Stock</span>
+                } else {
+                  <span class="px-3 py-1 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase">In Stock</span>
+                }
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button id="btnAdj-@item.ProductId" onclick="openAdjust('@item.ProductId','@item.ProductName',@item.PhysicalQty)"
+                          class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="ปรับสต็อกด่วน">
+                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                  </button>
+                  <a asp-controller="Products" asp-action="Edit" asp-route-id="@item.ProductId"
+                     class="p-2 bg-slate-50 text-slate-500 rounded-xl hover:bg-slate-800 hover:text-white transition-all shadow-sm" title="แก้ไขสินค้า">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- Adjust Stock Modal -->
-<div id="adjustModal" class="fixed inset-0 z-50 hidden flex items-center justify-center" style="background:rgba(0,0,0,0.4)">
-  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
-    <div class="flex justify-between items-center mb-5">
-      <h3 class="text-lg font-bold text-gray-800">ปรับสต็อก</h3>
-      <button onclick="closeAdjust()" class="text-gray-400 hover:text-gray-600">
-        <i data-lucide="x" class="w-5 h-5"></i>
+<div id="adjustModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background:rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);">
+  <div class="bg-white rounded-[2rem] shadow-2xl p-8 w-full max-w-md transform transition-all">
+    <div class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-100 text-blue-600 rounded-xl">
+           <i data-lucide="edit-3" class="w-5 h-5"></i>
+        </div>
+        <h3 class="text-xl font-black text-slate-800">ปรับสต็อกด่วน</h3>
+      </div>
+      <button onclick="closeAdjust()" class="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400">
+        <i data-lucide="x" class="w-6 h-6"></i>
       </button>
     </div>
-    <p id="adjProductName" class="text-sm text-gray-600 mb-4"></p>
 
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนปัจจุบัน</label>
-        <input id="adjCurrentQty" type="number" readonly
-               class="w-full px-4 py-2 border rounded-xl text-sm bg-gray-50 text-gray-500"/>
+    <div class="mb-6 p-4 bg-slate-50 rounded-2xl">
+      <p id="adjProductName" class="text-sm font-bold text-slate-800"></p>
+      <p class="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-wider">เลือกประเภทการปรับปรุง</p>
+    </div>
+
+    <div class="space-y-5">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">จำนวนเดิม</label>
+          <input id="adjCurrentQty" type="number" readonly class="w-full px-4 py-3 bg-slate-100 border-none rounded-2xl text-sm font-bold text-slate-400 cursor-not-allowed"/>
+        </div>
+        <div>
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">ประเภท</label>
+          <select id="adjType" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all" onchange="updatePreview()">
+            <option value="SET">กำหนดใหม่</option>
+            <option value="ADD">เพิ่มเข้า (+)</option>
+            <option value="SUB">ลดออก (-)</option>
+          </select>
+        </div>
       </div>
+      
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทการปรับ</label>
-        <select id="adjType" class="w-full px-4 py-2 border rounded-xl text-sm focus:outline-none"
-                onchange="updatePreview()">
-          <option value="SET">กำหนดจำนวนใหม่</option>
-          <option value="ADD">เพิ่มเข้า (+)</option>
-          <option value="SUB">ตัดออก (-)</option>
-        </select>
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">จำนวนที่ต้องการปรับ</label>
+        <input id="adjQty" type="number" min="0" value="0" oninput="updatePreview()" class="w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-xl font-black text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white transition-all" />
       </div>
+
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวน</label>
-        <input id="adjQty" type="number" min="0" value="0" oninput="updatePreview()"
-               class="w-full px-4 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">หมายเหตุ</label>
+        <input id="adjNote" type="text" placeholder="ระบุเหตุผลการปรับปรุง..." class="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:bg-white transition-all"/>
       </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
-        <input id="adjNote" type="text" placeholder="เช่น รับสินค้าจากซัพพลายเออร์"
-               class="w-full px-4 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-      </div>
-      <div id="adjPreview" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-700 hidden">
-        จำนวนใหม่: <span id="adjPreviewVal" class="font-bold"></span>
+
+      <div id="adjPreview" class="bg-blue-600 rounded-2xl p-4 text-center hidden shadow-lg shadow-blue-100">
+        <p class="text-[10px] text-blue-100 font-bold uppercase tracking-[0.2em] mb-1">จำนวนที่จะเป็นหลังบันทึก</p>
+        <span id="adjPreviewVal" class="text-3xl font-black text-white"></span>
       </div>
     </div>
 
-    <div class="flex gap-3 mt-6">
-      <button onclick="closeAdjust()" class="flex-1 py-2.5 border rounded-xl text-sm text-gray-600 hover:bg-gray-50">ยกเลิก</button>
-      <button onclick="submitAdjust(event)" class="flex-1 py-2.5 rounded-xl text-white text-sm font-medium" style="background:#2D6BE4">บันทึก</button>
+    <div class="flex gap-4 mt-8">
+      <button onclick="closeAdjust()" class="flex-1 py-4 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all">ยกเลิก</button>
+      <button onclick="submitAdjust(event)" class="flex-[2] py-4 rounded-2xl bg-blue-600 text-white font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">บันทึกข้อมูล</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast System -->
+<div id="toast" class="fixed bottom-8 right-8 z-[100] transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+  <div class="bg-slate-900 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 min-w-[300px]">
+    <div id="toastIcon" class="w-10 h-10 rounded-2xl flex items-center justify-center"></div>
+    <div class="flex flex-col">
+       <span id="toastTitle" class="font-black text-xs uppercase tracking-widest">Notification</span>
+       <span id="toastMsg" class="font-medium text-slate-300 text-sm mt-0.5"></span>
     </div>
   </div>
 </div>
@@ -135,7 +229,7 @@
 let currentProductId = '', currentQty = 0;
 function openAdjust(id, name, qty) {
   currentProductId = id; currentQty = qty;
-  document.getElementById('adjProductName').textContent = 'สินค้า: ' + name;
+  document.getElementById('adjProductName').textContent = name;
   document.getElementById('adjCurrentQty').value = qty;
   document.getElementById('adjQty').value = 0;
   document.getElementById('adjNote').value = '';
@@ -155,7 +249,9 @@ async function submitAdjust(event) {
   const qty  = parseInt(document.getElementById('adjQty').value) || 0;
   const note = document.getElementById('adjNote').value;
   const btn  = event?.target || document.activeElement;
-  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto"></i>';
+  lucide.createIcons();
+
   try {
     const res = await fetch('/api/stock/adjust', {
       method:'POST',
@@ -165,34 +261,94 @@ async function submitAdjust(event) {
     const data = await res.json();
     if (data.success) {
       closeAdjust();
-      showToast(data.message || 'ปรับสต็อกสำเร็จ', 'success');
-      setTimeout(() => window.location.reload(), 1200);
+      
+      // Update DOM to prevent reload
+      const physCell = document.getElementById('physQty-' + currentProductId);
+      const resSpan = document.getElementById('resQty-' + currentProductId);
+      const availSpan = document.getElementById('availQty-' + currentProductId);
+      const valCell = document.getElementById('val-' + currentProductId);
+      const costCell = document.getElementById('cost-' + currentProductId);
+      const statusCell = document.getElementById('status-' + currentProductId);
+      const btnAdj = document.getElementById('btnAdj-' + currentProductId);
+
+      if (physCell) {
+          const newQty = data.newQty;
+          physCell.textContent = newQty;
+          
+          const reserved = parseInt(resSpan.getAttribute('data-val') || 0);
+          const available = newQty - reserved;
+          
+          availSpan.textContent = available;
+          availSpan.className = 'font-black text-base ' + (available <= 0 ? 'text-rose-600' : 'text-emerald-600');
+          
+          const cost = parseFloat(costCell.getAttribute('data-cost') || 0);
+          const val = (newQty * cost).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+          valCell.textContent = '฿' + val;
+
+          let statusHtml = '';
+          if (available <= 0) {
+              statusHtml = '<span class="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase">Out of Stock</span>';
+          } else if (available <= 5) {
+              statusHtml = '<span class="px-3 py-1 bg-amber-50 text-amber-500 rounded-full text-[10px] font-black uppercase">Low Stock</span>';
+          } else {
+              statusHtml = '<span class="px-3 py-1 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase">In Stock</span>';
+          }
+          statusCell.innerHTML = statusHtml;
+
+          // Update button's onclick to pass new quantity
+          const pName = document.getElementById('adjProductName').textContent;
+          btnAdj.setAttribute('onclick', `openAdjust('${currentProductId}','${pName}',${newQty})`);
+      }
+
+      showToast('ปรับสต็อกสำเร็จ', 'ปรับปรุงข้อมูลสินค้าแล้ว', 'success');
+      btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
     } else {
-      showToast('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถปรับสต็อกได้'), 'error');
-      btn.disabled = false; btn.textContent = 'บันทึก';
+      showToast('เกิดข้อผิดพลาด', data.message || 'ไม่สามารถปรับสต็อกได้', 'error');
+      btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
     }
   } catch(e) {
-    showToast('ไม่สามารถเชื่อมต่อได้', 'error');
-    btn.disabled = false; btn.textContent = 'บันทึก';
+    console.error('JS Error:', e);
+    showToast('การเชื่อมต่อล้มเหลว', 'โปรดตรวจสอบอินเทอร์เน็ตของคุณ: ' + e.message, 'error');
+    btn.disabled = false; btn.textContent = 'บันทึกข้อมูล';
   }
 }
 
-function showToast(message, type = 'success') {
-  const toast = document.getElementById('stockToast');
+let toastTimeout;
+function showToast(title, msg, type = 'success') {
+  console.log("Showing toast:", title, msg);
+  const toast = document.getElementById('toast');
+  const icon = document.getElementById('toastIcon');
+  const tTitle = document.getElementById('toastTitle');
+  const tMsg = document.getElementById('toastMsg');
+  
   if (!toast) return;
 
-  toast.textContent = message;
-  toast.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+  tTitle.textContent = title;
+  tMsg.textContent = msg;
 
   if (type === 'success') {
-    toast.classList.add('bg-green-100', 'text-green-800');
+    icon.className = 'w-10 h-10 rounded-2xl flex items-center justify-center bg-emerald-500 text-white';
+    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   } else {
-    toast.classList.add('bg-red-100', 'text-red-800');
+    icon.className = 'w-10 h-10 rounded-2xl flex items-center justify-center bg-rose-500 text-white';
+    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
   }
 
-  toast.style.opacity = '1';
-  setTimeout(() => {
-    toast.classList.add('hidden');
-  }, 4000);
+  toast.classList.remove('translate-y-20', 'opacity-0');
+  toast.classList.add('translate-y-0', 'opacity-100');
+  
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.add('translate-y-20', 'opacity-0');
+    toast.classList.remove('translate-y-0', 'opacity-100');
+  }, 3500);
+}
+
+@if (TempData["Success"] != null) {
+  <text>window.addEventListener('DOMContentLoaded', () => showToast('สำเร็จ', '@TempData["Success"]', 'success'));</text>
+}
+@if (TempData["Error"] != null) {
+  <text>window.addEventListener('DOMContentLoaded', () => showToast('ข้อผิดพลาด', '@TempData["Error"]', 'error'));</text>
 }
 </script>
+

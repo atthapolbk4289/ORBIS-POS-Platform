@@ -1,27 +1,144 @@
-@{ Layout = "_Layout"; }
-<div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <div><h2 class="text-xl font-bold text-gray-800">แจ้งทำลายสินค้า</h2></div>
-    <button class="px-4 py-2 rounded-lg text-white text-sm bg-red-600">+ แจ้งทำลาย</button>
-  </div>
-  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-    <table class="w-full text-sm">
-      <thead style="background:#F8FAFC">
-        <tr class="text-left text-xs text-gray-500 uppercase">
-          <th class="px-5 py-3">เลขที่</th>
-          <th class="px-5 py-3">สินค้า</th>
-          <th class="px-5 py-3 text-right">จำนวน</th>
-          <th class="px-5 py-3">สาเหตุ</th>
-          <th class="px-5 py-3">อนุมัติโดย</th>
-          <th class="px-5 py-3">วันที่</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="6" class="px-5 py-12 text-center text-gray-400">
-          <i data-lucide="trash-2" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
-          <p>ยังไม่มีรายการทำลายสินค้า</p>
-        </td></tr>
-      </tbody>
-    </table>
+@{ ViewData["ActiveMenu"] = "stock-damage"; ViewData["PageTitle"] = "แจ้งทำลายสินค้า"; Layout = "_Layout"; }
+
+<div class="max-w-4xl mx-auto">
+  <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+    <div class="bg-rose-600 px-8 py-10 text-white relative overflow-hidden">
+      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+      <div class="relative z-10 flex items-center gap-4">
+        <div class="p-3 bg-white/20 rounded-2xl backdrop-blur-md">
+          <i data-lucide="trash-2" class="w-8 h-8"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-black">แจ้งทำลาย / สินค้าชำรุด</h2>
+          <p class="text-rose-100 text-sm mt-1">บันทึกรายการสินค้าที่เสียหาย ชำรุด หรือหมดอายุออกจากสต็อก</p>
+        </div>
+      </div>
+    </div>
+
+    <form id="damageForm" class="p-8 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- เลือกสินค้า -->
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">เลือกสินค้าที่เสียหาย</label>
+          <div class="relative group">
+            <select id="productId" name="productId" required class="w-full pl-4 pr-10 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-100 focus:bg-white focus:border-rose-500 transition-all text-slate-700 appearance-none">
+              <option value="">-- โปรดเลือกสินค้า --</option>
+              @foreach (var item in (IEnumerable<PosSystem.Models.ViewModels.ProductDropdownDto>)ViewData["Products"] ?? new List<PosSystem.Models.ViewModels.ProductDropdownDto>()) {
+                <option value="@item.Id">@item.Name (@item.Sku) - คงเหลือ: @item.PhysicalQty</option>
+              }
+            </select>
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <i data-lucide="chevron-down" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- จำนวนที่เสียหาย -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">จำนวนที่ทำลาย</label>
+          <input type="number" id="quantity" name="quantity" min="1" required 
+                 class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-100 focus:bg-white focus:border-rose-500 transition-all text-slate-700"
+                 placeholder="0" />
+        </div>
+
+        <!-- สาเหตุ -->
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">สาเหตุการทำลาย</label>
+          <select id="reason" name="reason" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-100 focus:bg-white focus:border-rose-500 transition-all text-slate-700">
+            <option value="สินค้าชำรุด">สินค้าชำรุด</option>
+            <option value="สินค้าหมดอายุ">สินค้าหมดอายุ</option>
+            <option value="หาย / หาไม่เจอ">หาย / หาไม่เจอ</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+
+        <!-- รายละเอียดเพิ่มเติม -->
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">รายละเอียดเพิ่มเติม</label>
+          <textarea id="note" name="note" rows="3"
+                    class="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-rose-100 focus:bg-white focus:border-rose-500 transition-all text-slate-700 resize-none"
+                    placeholder="ระบุรายละเอียดเพิ่มเติมเกี่ยวกับความเสียหาย"></textarea>
+        </div>
+      </div>
+
+      <div class="pt-6 flex gap-4">
+        <a asp-action="Index" class="flex-1 py-4 rounded-2xl border border-slate-200 text-slate-500 font-bold text-center hover:bg-slate-50 transition-all">
+          ยกเลิก
+        </a>
+        <button type="submit" class="flex-[2] py-4 rounded-2xl bg-rose-600 text-white font-bold text-lg shadow-xl shadow-rose-100 hover:bg-rose-700 hover:shadow-rose-200 active:scale-[0.98] transition-all">
+          ยืนยันการแจ้งทำลาย
+        </button>
+      </div>
+    </form>
   </div>
 </div>
+
+<div id="toast" class="fixed bottom-8 right-8 z-[100] transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+  <div class="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+    <div id="toastIcon" class="w-8 h-8 rounded-full flex items-center justify-center"></div>
+    <span id="toastMsg" class="font-medium"></span>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+  document.getElementById('damageForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin mx-auto"></i>';
+    lucide.createIcons();
+
+    const data = {
+      productId: document.getElementById('productId').value,
+      quantity: parseInt(document.getElementById('quantity').value),
+      reason: document.getElementById('reason').value + ': ' + document.getElementById('note').value
+    };
+
+    try {
+      const res = await fetch('/api/stock/damage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (result.success) {
+        showToast('แจ้งทำลายสินค้าสำเร็จเรียบร้อยแล้ว', 'success');
+        setTimeout(() => window.location.href = '@Url.Action("Index", "Stock")', 1500);
+      } else {
+        showToast(result.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+        btn.disabled = false;
+        btn.textContent = 'ยืนยันการแจ้งทำลาย';
+      }
+    } catch (err) {
+      showToast('ไม่สามารถเชื่อมต่อได้', 'error');
+      btn.disabled = false;
+      btn.textContent = 'ยืนยันการแจ้งทำลาย';
+    }
+  });
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    const text = document.getElementById('toastMsg');
+    
+    text.textContent = msg;
+    if (type === 'success') {
+      icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500 text-white';
+      icon.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i>';
+    } else {
+      icon.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-rose-500 text-white';
+      icon.innerHTML = '<i data-lucide="alert-circle" class="w-5 h-5"></i>';
+    }
+    
+    lucide.createIcons();
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+    
+    setTimeout(() => {
+      toast.classList.add('translate-y-20', 'opacity-0');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+    }, 3000);
+  }
+</script>
+}

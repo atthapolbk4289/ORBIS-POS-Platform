@@ -78,12 +78,43 @@ namespace PosSystem.Controllers
         /// ระงับการใช้งานผู้จำหน่าย (Soft Delete)
         /// </summary>
         [HttpPost]
+        public async Task<IActionResult> Suspend(Guid id)
+        {
+            try {
+                await _sql.ExecuteAsync("UPDATE Suppliers SET IsActive = 0 WHERE Id = @Id", new[] { new SqlParameter("@Id", id) });
+                TempData["Success"] = "ระงับการใช้งานผู้จำหน่ายสำเร็จ";
+            } catch (Exception ex) {
+                TempData["Error"] = "ผิดพลาด: " + ex.Message;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// ปลดระงับการใช้งานผู้จำหน่าย
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> Unsuspend(Guid id)
+        {
+            try {
+                await _sql.ExecuteAsync("UPDATE Suppliers SET IsActive = 1 WHERE Id = @Id", new[] { new SqlParameter("@Id", id) });
+                TempData["Success"] = "ปลดระงับผู้จำหน่ายสำเร็จ";
+            } catch (Exception ex) {
+                TempData["Error"] = "ผิดพลาด: " + ex.Message;
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        /// <summary>
+        /// ลบข้อมูลผู้จำหน่าย (Hard Delete)
+        /// </summary>
+        [HttpPost]
         public async Task<IActionResult> Delete(Guid id)
         {
             try {
-                // อัปเดตสถานะ IsActive เป็น 0 แทนการลบข้อมูลจริง
-                await _sql.ExecuteAsync("UPDATE Suppliers SET IsActive = 0 WHERE Id = @Id", new[] { new SqlParameter("@Id", id) });
-                TempData["Success"] = "ระงับการใช้งานผู้จำหน่ายสำเร็จ";
+                await _sql.ExecuteAsync("DELETE FROM Suppliers WHERE Id = @Id", new[] { new SqlParameter("@Id", id) });
+                TempData["Success"] = "ลบข้อมูลผู้จำหน่ายสำเร็จ";
+            } catch (SqlException ex) when (ex.Number == 547) {
+                TempData["Error"] = "ไม่สามารถลบได้ เนื่องจากมีข้อมูลใบสั่งซื้อที่เชื่อมโยงกับผู้จำหน่ายนี้ (แนะนำให้ใช้การ 'ระงับ' แทน)";
             } catch (Exception ex) {
                 TempData["Error"] = "ผิดพลาด: " + ex.Message;
             }
