@@ -8,12 +8,19 @@ using System.Threading.Tasks;
 
 namespace PosSystem.Controllers
 {
+    /// <summary>
+    /// คอนโทรลเลอร์สำหรับจัดการข้อมูลผู้จำหน่าย (Suppliers)
+    /// </summary>
     [Authorize(Roles = "IT_ADMIN,MANAGER,STOCK_KEEPER")]
     public class SuppliersController : Controller
     {
         private readonly ISqlHelper _sql;
         public SuppliersController(ISqlHelper sql) { _sql = sql; }
 
+        /// <summary>
+        /// แสดงรายการผู้จำหน่ายทั้งหมดในสาขา
+        /// </summary>
+        /// <param name="openCreate">กำหนดว่าจะให้เปิด Modal สร้างผู้จำหน่ายทันทีหรือไม่</param>
         public async Task<IActionResult> Index(bool openCreate = false)
         {
             ViewData["ActiveMenu"] = "stock";
@@ -24,6 +31,7 @@ namespace PosSystem.Controllers
             var branchClaim = User.FindFirst("BranchId")?.Value;
             if (!Guid.TryParse(branchClaim, out var branchId)) return View(new List<SupplierRow>());
 
+            // ดึงข้อมูลผู้จำหน่ายจากฐานข้อมูล
             var items = await _sql.QueryAsync<SupplierRow>(
                 "SELECT Id, Name, ContactName, Phone, Email, IsActive FROM Suppliers WHERE BranchId = @BranchId ORDER BY Name",
                 new[] { new SqlParameter("@BranchId", branchId) });
@@ -31,6 +39,9 @@ namespace PosSystem.Controllers
             return View(items);
         }
 
+        /// <summary>
+        /// บันทึกข้อมูลผู้จำหน่ายใหม่
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Create(CreateSupplierInput input)
         {
@@ -42,6 +53,7 @@ namespace PosSystem.Controllers
             }
 
             try {
+                // บันทึกข้อมูลลงในตาราง Suppliers
                 await _sql.ExecuteAsync(
                     @"INSERT INTO Suppliers (Id, BranchId, Name, ContactName, Phone, Email, Address, TaxId, IsActive, CreatedAt)
                       VALUES (@Id, @BranchId, @Name, @Contact, @Phone, @Email, @Address, @TaxId, 1, GETUTCDATE())",
@@ -62,10 +74,14 @@ namespace PosSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        /// <summary>
+        /// ระงับการใช้งานผู้จำหน่าย (Soft Delete)
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> Delete(Guid id)
         {
             try {
+                // อัปเดตสถานะ IsActive เป็น 0 แทนการลบข้อมูลจริง
                 await _sql.ExecuteAsync("UPDATE Suppliers SET IsActive = 0 WHERE Id = @Id", new[] { new SqlParameter("@Id", id) });
                 TempData["Success"] = "ระงับการใช้งานผู้จำหน่ายสำเร็จ";
             } catch (Exception ex) {
@@ -95,3 +111,4 @@ namespace PosSystem.Controllers
         }
     }
 }
+
