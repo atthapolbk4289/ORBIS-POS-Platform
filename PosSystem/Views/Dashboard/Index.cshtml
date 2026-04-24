@@ -1,0 +1,189 @@
+@model PosSystem.Models.ViewModels.DashboardViewModel
+@{ Layout = "_Layout"; }
+
+<!-- ตาม Screenshot: 3 metric cards + charts -->
+
+<!-- TOP METRIC CARDS (ตาม screenshot) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  
+  <!-- Card 1: กราฟภาพรวม + ยอดรวม -->
+  <div class="col-span-1 md:col-span-1 p-5 rounded-xl flex items-center gap-4" style="background:#1B3A6B">
+    <div class="p-3 rounded-lg" style="background:rgba(255,255,255,0.2)">
+      <i data-lucide="trending-up" class="w-8 h-8 text-white"></i>
+    </div>
+    <div>
+      <p class="text-blue-200 text-xs">กราฟภาพรวม</p>
+    </div>
+  </div>
+  
+  <div class="p-5 rounded-xl" style="background:#2D6BE4">
+    <div class="flex justify-between items-start mb-2">
+      <div>
+        <p class="text-blue-100 text-xs">ยอดรวม</p>
+        <p class="text-blue-100 text-xs">เดือน @Model.MonthlySales.MonthLabel</p>
+      </div>
+    </div>
+    <div class="flex items-end justify-between">
+      <p class="text-white text-xl font-bold">@Model.MonthlySales.TotalRevenue.ToString("N2")</p>
+      <span class="text-blue-200 text-sm">฿</span>
+    </div>
+  </div>
+  
+  <!-- Card 2: โปรโมชั่น -->
+  <div class="p-5 rounded-xl" style="background:#2D6BE4">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <p class="text-blue-100 text-xs">โปรโมชั่น</p>
+        <p class="text-blue-100 text-xs">เดือน @Model.MonthlySales.MonthLabel</p>
+      </div>
+      <i data-lucide="megaphone" class="w-5 h-5 text-blue-200"></i>
+    </div>
+    <p class="text-white text-2xl font-bold">@Model.PromotionCount.ToString("N0")</p>
+  </div>
+</div>
+
+<!-- Second row: จำนวนลูกค้า -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="p-5 rounded-xl bg-white shadow-sm border" style="border-left: 4px solid #4A90D9">
+    <div class="flex justify-between items-start">
+      <div>
+        <p class="text-gray-500 text-xs">จำนวนลูกค้า เดือน @Model.MonthlySales.MonthLabel</p>
+        <p class="text-gray-800 text-2xl font-bold mt-1">@Model.CustomerCount.ToString("N0")</p>
+      </div>
+      <i data-lucide="users" class="w-8 h-8 text-blue-300"></i>
+    </div>
+  </div>
+  <div class="p-5 rounded-xl bg-white shadow-sm border" style="border-left: 4px solid #10B981">
+    <div class="flex justify-between items-start">
+      <div>
+        <p class="text-gray-500 text-xs">กำไรขั้นต้น เดือนนี้</p>
+        <p class="text-gray-800 text-2xl font-bold mt-1">@Model.ProfitLoss.GrossProfit.ToString("N2")</p>
+        <p class="text-green-600 text-xs mt-1">@Model.ProfitLoss.GrossMarginPct.ToString("N1")% margin</p>
+      </div>
+      <i data-lucide="trending-up" class="w-8 h-8 text-green-300"></i>
+    </div>
+  </div>
+  <div class="p-5 rounded-xl bg-white shadow-sm border" style="border-left: 4px solid #F59E0B">
+    <p class="text-gray-500 text-xs">สินค้าใกล้หมด</p>
+    <p class="text-gray-800 text-2xl font-bold mt-1">@Model.LowStockCount</p>
+    <a asp-controller="Stock" asp-action="Alerts" class="text-amber-600 text-xs hover:underline">ดูรายการ →</a>
+  </div>
+</div>
+
+<!-- LINE CHART: ภาพรวมยอดขาย -->
+<div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="font-semibold text-gray-800">ภาพรวมยอดขาย</h3>
+    <div class="flex gap-3 text-xs text-gray-500">
+      <span class="flex items-center gap-1"><span class="w-3 h-1 bg-blue-800 inline-block rounded"></span>ปีนี้</span>
+      <span class="flex items-center gap-1"><span class="w-3 h-1 bg-blue-300 inline-block rounded"></span>ปีก่อน</span>
+    </div>
+  </div>
+  <canvas id="salesLineChart" height="100"></canvas>
+</div>
+
+<!-- BOTTOM ROW: Donut + Order Type + ยอดขายต่อสาขา + สินค้าขายดี -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  
+  <!-- Donut Chart: ยอดขายเมนู -->
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h3 class="font-semibold text-gray-800 mb-1">ยอดขายเมนู</h3>
+    <p class="text-gray-400 text-xs mb-4">เดือน @Model.MonthlySales.MonthLabel</p>
+    <div class="flex items-center gap-6">
+      <canvas id="menuDonut" width="150" height="150"></canvas>
+      <div class="space-y-2 text-sm">
+        @foreach (var item in Model.SalesByType) {
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full inline-block" style="background:@item.Color"></span>
+            <span class="text-gray-600">@item.Label @item.Percentage.ToString("N0")%</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  
+  <!-- ประเภทการซื้อ -->
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h3 class="font-semibold text-gray-800 mb-4">ประเภทการซื้อ</h3>
+    @foreach (var item in Model.SalesByType) {
+      <div class="mb-3">
+        <div class="flex justify-between text-xs text-gray-600 mb-1">
+          <span>@item.Label</span>
+          <span>@item.Percentage.ToString("N0")%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="h-2 rounded-full" style="width:@item.Percentage%; background:@item.Color"></div>
+        </div>
+      </div>
+    }
+    <div class="mt-4 pt-4 border-t">
+      <p class="text-xs text-gray-500 mb-2">ยอดรวม</p>
+      <div class="flex gap-4">
+        @foreach (var item in Model.SalesByType) {
+          <div class="flex items-center gap-1 text-xs">
+            <span class="w-2 h-2 rounded-full" style="background:@item.Color"></span>
+            <span>@item.Amount.ToString("N0")</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ยอดขายต่อสาขา + สินค้าขายดี -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h3 class="font-semibold text-gray-800 mb-4">ยอดขายต่อสาขา</h3>
+    <canvas id="branchBarChart" height="120"></canvas>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h3 class="font-semibold text-gray-800 mb-4">สินค้าขายดี</h3>
+    <canvas id="topProductChart" height="120"></canvas>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+// Chart data from Model
+const dailyLabels = @Html.Raw(Json.Serialize(Model.DailySales.Select(x => x.DateLabel)));
+const dailyData   = @Html.Raw(Json.Serialize(Model.DailySales.Select(x => x.Revenue)));
+
+// 1. Line Chart
+new Chart(document.getElementById('salesLineChart'), {
+  type: 'line',
+  data: {
+    labels: dailyLabels,
+    datasets: [{
+      label: 'ยอดขาย',
+      data: dailyData,
+      borderColor: '#1B3A6B',
+      backgroundColor: 'rgba(27,58,107,0.1)',
+      tension: 0.4, fill: true, pointRadius: 3
+    }]
+  },
+  options: { plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+});
+
+// 2. Donut Chart
+const typeData = @Html.Raw(Json.Serialize(Model.SalesByType));
+new Chart(document.getElementById('menuDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: typeData.map(x=>x.label),
+    datasets: [{ data: typeData.map(x=>x.percentage), backgroundColor: typeData.map(x=>x.color) }]
+  },
+  options: { cutout:'70%', plugins:{legend:{display:false}} }
+});
+
+// 3. Top Products Bar
+const topProd = @Html.Raw(Json.Serialize(Model.TopProducts.Take(7)));
+new Chart(document.getElementById('topProductChart'), {
+  type: 'bar',
+  data: {
+    labels: topProd.map(x=>x.name),
+    datasets: [{ data: topProd.map(x=>x.totalRevenue), backgroundColor:'#2D6BE4', borderRadius:4 }]
+  },
+  options: { plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+});
+</script>
+}

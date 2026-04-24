@@ -1,0 +1,22 @@
+@{ Layout = "_Layout"; }
+<div class="space-y-6">
+  <h2 class="text-xl font-bold text-gray-800">ตั้งค่าระบบ</h2>
+  <div class="grid grid-cols-3 gap-5">
+    @foreach (var s in new[] {
+      ("store","ข้อมูลร้าน","ชื่อร้าน โลโก้ เลขภาษี"),
+      ("printer","เครื่องพิมพ์","ตั้งค่า Thermal Printer"),
+      ("credit-card","การชำระเงิน","วิธีชำระและอัตราภาษี"),
+      ("bell","การแจ้งเตือน","สต็อกต่ำ ยอดขาย"),
+      ("database","ฐานข้อมูล","Backup และ Restore"),
+      ("shield","ความปลอดภัย","Log และนโยบาย")
+    }) {
+      <div class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer border hover:border-blue-300">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style="background:#EEF4FF">
+          <i data-lucide="@s.Item1" class="w-5 h-5" style="color:#2D6BE4"></i>
+        </div>
+        <h3 class="font-semibold text-gray-800">@s.Item2</h3>
+        <p class="text-xs text-gray-500 mt-1">@s.Item3</p>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,198 @@
+@model PosSystem.Models.ViewModels.StockIndexViewModel
+@{ ViewData["ActiveMenu"] = "stock-inventory"; ViewData["PageTitle"] = "สินค้าคงคลัง"; Layout = "_Layout"; }
+
+<!-- Summary Cards -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-xl p-5 shadow-sm">
+    <p class="text-gray-500 text-xs">มูลค่าสต็อกรวม</p>
+    <p class="text-2xl font-bold text-gray-800 mt-1">฿@Model.TotalStockValue.ToString("N2")</p>
+  </div>
+  <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-amber-400">
+    <p class="text-gray-500 text-xs">สินค้าใกล้หมด</p>
+    <p class="text-2xl font-bold text-amber-600 mt-1">@Model.LowStockCount</p>
+  </div>
+  <div class="bg-white rounded-xl p-5 shadow-sm border-l-4 border-red-400">
+    <p class="text-gray-500 text-xs">สินค้าหมด</p>
+    <p class="text-2xl font-bold text-red-600 mt-1">@Model.OutOfStockCount</p>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<form method="get">
+<div class="bg-white rounded-xl p-4 mb-4 shadow-sm flex gap-3 items-center">
+  <input name="search" value="@Model.Search" class="flex-1 px-3 py-2 border rounded-lg text-sm" placeholder="ค้นหาสินค้า, SKU..."/>
+  <label class="flex items-center gap-2 text-sm text-gray-600 whitespace-nowrap">
+    <input type="checkbox" name="lowStockOnly" value="true" @(Model.LowStockOnly ? "checked" : "") /> สต็อกต่ำเท่านั้น
+  </label>
+  <button type="submit" class="px-4 py-2 rounded-lg text-white text-sm" style="background:#2D6BE4">ค้นหา</button>
+</div>
+</form>
+
+<div id="stockToast" class="fixed top-4 right-4 z-50 hidden max-w-sm rounded-xl px-4 py-3 shadow-xl text-sm font-medium" role="alert"></div>
+
+<!-- Stock Table -->
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+  <table class="w-full text-sm">
+    <thead style="background:#F8FAFC">
+      <tr class="text-left text-gray-500 text-xs uppercase">
+        <th class="px-4 py-3">สินค้า</th>
+        <th class="px-4 py-3 text-right">ของจริง</th>
+        <th class="px-4 py-3 text-right">จองแล้ว</th>
+        <th class="px-4 py-3 text-right">พร้อมขาย</th>
+        <th class="px-4 py-3 text-right">ราคาทุน</th>
+        <th class="px-4 py-3 text-right">มูลค่า</th>
+        <th class="px-4 py-3 text-center">สถานะ</th>
+        <th class="px-4 py-3">จัดการ</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (Model.StockItems.Count == 0) {
+        <tr><td colspan="8" class="px-4 py-12 text-center text-gray-400">ไม่พบรายการสินค้า</td></tr>
+      }
+      @foreach (var item in Model.StockItems) {
+        <tr class="border-t @(item.IsLowStock ? "bg-amber-50" : "") hover:bg-gray-50">
+          <td class="px-4 py-3">
+            <div class="font-medium text-gray-800">@item.ProductName</div>
+            <div class="text-xs text-gray-400">@item.Sku</div>
+          </td>
+          <td class="px-4 py-3 text-right font-medium">@item.PhysicalQty</td>
+          <td class="px-4 py-3 text-right text-orange-500">@item.ReservedQty</td>
+          <td class="px-4 py-3 text-right font-bold @(item.AvailableQty <= 0 ? "text-red-600" : "text-green-600")">
+            @item.AvailableQty
+          </td>
+          <td class="px-4 py-3 text-right">฿@item.CostPrice.ToString("N2")</td>
+          <td class="px-4 py-3 text-right">฿@item.StockValue.ToString("N2")</td>
+          <td class="px-4 py-3 text-center">
+            @if (item.AvailableQty <= 0) {
+              <span class="px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium">หมด</span>
+            } else if (item.IsLowStock) {
+              <span class="px-2 py-1 bg-amber-100 text-amber-600 rounded-full text-xs font-medium">ใกล้หมด</span>
+            } else {
+              <span class="px-2 py-1 bg-green-100 text-green-600 rounded-full text-xs font-medium">ปกติ</span>
+            }
+          </td>
+          <td class="px-4 py-3">
+            <button onclick="openAdjust('@item.ProductId','@item.ProductName',@item.PhysicalQty)"
+                    class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium">
+              ปรับสต็อก
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- Adjust Stock Modal -->
+<div id="adjustModal" class="fixed inset-0 z-50 hidden flex items-center justify-center" style="background:rgba(0,0,0,0.4)">
+  <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="text-lg font-bold text-gray-800">ปรับสต็อก</h3>
+      <button onclick="closeAdjust()" class="text-gray-400 hover:text-gray-600">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <p id="adjProductName" class="text-sm text-gray-600 mb-4"></p>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนปัจจุบัน</label>
+        <input id="adjCurrentQty" type="number" readonly
+               class="w-full px-4 py-2 border rounded-xl text-sm bg-gray-50 text-gray-500"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทการปรับ</label>
+        <select id="adjType" class="w-full px-4 py-2 border rounded-xl text-sm focus:outline-none"
+                onchange="updatePreview()">
+          <option value="SET">กำหนดจำนวนใหม่</option>
+          <option value="ADD">เพิ่มเข้า (+)</option>
+          <option value="SUB">ตัดออก (-)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">จำนวน</label>
+        <input id="adjQty" type="number" min="0" value="0" oninput="updatePreview()"
+               class="w-full px-4 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+        <input id="adjNote" type="text" placeholder="เช่น รับสินค้าจากซัพพลายเออร์"
+               class="w-full px-4 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+      </div>
+      <div id="adjPreview" class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-700 hidden">
+        จำนวนใหม่: <span id="adjPreviewVal" class="font-bold"></span>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeAdjust()" class="flex-1 py-2.5 border rounded-xl text-sm text-gray-600 hover:bg-gray-50">ยกเลิก</button>
+      <button onclick="submitAdjust(event)" class="flex-1 py-2.5 rounded-xl text-white text-sm font-medium" style="background:#2D6BE4">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentProductId = '', currentQty = 0;
+function openAdjust(id, name, qty) {
+  currentProductId = id; currentQty = qty;
+  document.getElementById('adjProductName').textContent = 'สินค้า: ' + name;
+  document.getElementById('adjCurrentQty').value = qty;
+  document.getElementById('adjQty').value = 0;
+  document.getElementById('adjNote').value = '';
+  document.getElementById('adjPreview').classList.add('hidden');
+  document.getElementById('adjustModal').classList.remove('hidden');
+}
+function closeAdjust() { document.getElementById('adjustModal').classList.add('hidden'); }
+function updatePreview() {
+  const type = document.getElementById('adjType').value;
+  const qty  = parseInt(document.getElementById('adjQty').value) || 0;
+  let newQty = type === 'SET' ? qty : type === 'ADD' ? currentQty + qty : currentQty - qty;
+  document.getElementById('adjPreviewVal').textContent = newQty;
+  document.getElementById('adjPreview').classList.remove('hidden');
+}
+async function submitAdjust(event) {
+  const type = document.getElementById('adjType').value;
+  const qty  = parseInt(document.getElementById('adjQty').value) || 0;
+  const note = document.getElementById('adjNote').value;
+  const btn  = event?.target || document.activeElement;
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  try {
+    const res = await fetch('/api/stock/adjust', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ productId: currentProductId, adjustType: type, quantity: qty, note: note })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeAdjust();
+      showToast(data.message || 'ปรับสต็อกสำเร็จ', 'success');
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
+      showToast('เกิดข้อผิดพลาด: ' + (data.message || 'ไม่สามารถปรับสต็อกได้'), 'error');
+      btn.disabled = false; btn.textContent = 'บันทึก';
+    }
+  } catch(e) {
+    showToast('ไม่สามารถเชื่อมต่อได้', 'error');
+    btn.disabled = false; btn.textContent = 'บันทึก';
+  }
+}
+
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('stockToast');
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+
+  if (type === 'success') {
+    toast.classList.add('bg-green-100', 'text-green-800');
+  } else {
+    toast.classList.add('bg-red-100', 'text-red-800');
+  }
+
+  toast.style.opacity = '1';
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 4000);
+}
+</script>

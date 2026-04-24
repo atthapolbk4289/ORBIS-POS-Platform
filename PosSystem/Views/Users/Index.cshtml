@@ -1,0 +1,118 @@
+@using PosSystem.Controllers
+@model System.Collections.Generic.List<UsersController.UserRow>
+@{
+  var branches = ViewData["Branches"] as System.Collections.Generic.List<UsersController.BranchOption> ?? new();
+  var openCreate = (ViewData["OpenCreate"] as bool?) == true;
+}
+@{ Layout = "_Layout"; }
+<div class="space-y-6">
+  @if (TempData["Success"] != null)
+  {
+    <div class="rounded-lg bg-green-50 text-green-700 px-4 py-3 text-sm">@TempData["Success"]</div>
+  }
+  @if (TempData["Error"] != null)
+  {
+    <div class="rounded-lg bg-red-50 text-red-700 px-4 py-3 text-sm">@TempData["Error"]</div>
+  }
+  <div class="flex justify-between items-center">
+    <div><h2 class="text-xl font-bold text-gray-800">จัดการผู้ใช้งาน</h2></div>
+    <a asp-action="Index" asp-route-openCreate="true" class="px-4 py-2 rounded-lg text-white text-sm inline-block" style="background:#2D6BE4">+ เพิ่มผู้ใช้</a>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead style="background:#F8FAFC">
+        <tr class="text-left text-xs text-gray-500 uppercase">
+          <th class="px-5 py-3">ชื่อ-นามสกุล</th>
+          <th class="px-5 py-3">ชื่อผู้ใช้</th>
+          <th class="px-5 py-3">สาขา</th>
+          <th class="px-5 py-3">สิทธิ์</th>
+          <th class="px-5 py-3">เข้าสู่ระบบล่าสุด</th>
+          <th class="px-5 py-3">สถานะ</th>
+          <th class="px-5 py-3">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (Model != null && Model.Count > 0)
+        {
+          @foreach (var u in Model)
+          {
+            <tr class="border-t hover:bg-gray-50">
+              <td class="px-5 py-3 font-medium text-gray-800">@u.FullName</td>
+              <td class="px-5 py-3 text-gray-600">@u.Username</td>
+              <td class="px-5 py-3 text-gray-600">@u.BranchName</td>
+              <td class="px-5 py-3">
+                <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">@u.Role</span>
+              </td>
+              <td class="px-5 py-3 text-gray-500 text-xs">@(u.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
+              <td class="px-5 py-3">
+                <span class="px-2 py-1 text-xs rounded-full @(u.Status=="ACTIVE"?"bg-green-100 text-green-700":"bg-red-100 text-red-600")">
+                  @(u.Status == "ACTIVE" ? "ใช้งาน" : "ระงับ")
+                </span>
+              </td>
+              <td class="px-5 py-3 text-right">
+                <form asp-action="ResetPassword" method="post" class="inline" onsubmit="return confirm('ยืนยันรีเซ็ตรหัสผ่านผู้ใช้นี้เป็น Admin@1234 ?')">
+                  <input type="hidden" name="id" value="@u.Id" />
+                  <button type="submit" class="p-1.5 text-gray-400 hover:text-amber-600 transition-colors" title="รีเซ็ตรหัสผ่าน">
+                    <i data-lucide="key-round" class="w-4 h-4"></i>
+                  </button>
+                </form>
+                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('ยืนยันการปิดใช้งานผู้ใช้นี้?')">
+                  <input type="hidden" name="id" value="@u.Id" />
+                  <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          }
+        }
+        else
+        {
+          <tr><td colspan="7" class="px-5 py-12 text-center text-gray-400">
+            <i data-lucide="users" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+            <p>ยังไม่มีผู้ใช้งาน</p>
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="create-user-modal" class="@(openCreate ? "" : "hidden") fixed inset-0 bg-black/40 z-40">
+  <div class="max-w-2xl w-full bg-white rounded-xl shadow-xl p-5 mx-auto mt-16">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">เพิ่มผู้ใช้งานใหม่</h3>
+      <a asp-action="Index" class="text-gray-400">✕</a>
+    </div>
+    <form method="post" asp-action="Create" class="grid grid-cols-2 gap-3">
+      <input name="FullName" required placeholder="ชื่อ-นามสกุล" class="col-span-2 px-3 py-2 border rounded-lg text-sm" />
+      <input name="Username" required placeholder="ชื่อผู้ใช้" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="Password" required type="password" placeholder="รหัสผ่าน" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="Phone" placeholder="เบอร์โทร" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="Email" placeholder="อีเมล" class="px-3 py-2 border rounded-lg text-sm" />
+      <select name="Role" class="px-3 py-2 border rounded-lg text-sm">
+        <option value="CASHIER">CASHIER</option>
+        <option value="STOCK_KEEPER">STOCK_KEEPER</option>
+        <option value="MANAGER">MANAGER</option>
+        <option value="EXECUTIVE">EXECUTIVE</option>
+        <option value="IT_ADMIN">IT_ADMIN</option>
+      </select>
+      <select name="Status" class="px-3 py-2 border rounded-lg text-sm">
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="INACTIVE">INACTIVE</option>
+        <option value="SUSPENDED">SUSPENDED</option>
+      </select>
+      <input name="Pin" placeholder="PIN 6 หลัก (ไม่บังคับ)" class="px-3 py-2 border rounded-lg text-sm" />
+      <select name="BranchId" class="px-3 py-2 border rounded-lg text-sm">
+        @foreach (var b in branches)
+        {
+          <option value="@b.Id">@b.Name</option>
+        }
+      </select>
+      <div class="col-span-2 flex justify-end gap-2 pt-2">
+        <a asp-action="Index" class="px-4 py-2 border rounded-lg text-sm inline-block">ยกเลิก</a>
+        <button type="submit" class="px-4 py-2 rounded-lg text-white text-sm" style="background:#2D6BE4">บันทึก</button>
+      </div>
+    </form>
+  </div>
+</div>

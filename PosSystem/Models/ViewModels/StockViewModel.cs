@@ -1,0 +1,35 @@
+using System;
+using System.Collections.Generic;
+
+namespace PosSystem.Models.ViewModels
+{
+    public class StockIndexViewModel
+    {
+        public decimal TotalStockValue { get; set; }
+        public int LowStockCount { get; set; }
+        public int OutOfStockCount { get; set; }
+        public string? Search { get; set; }
+        public bool LowStockOnly { get; set; }
+        public List<StockItemData> StockItems { get; set; } = new();
+    }
+
+    public class StockItemData
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; } = "";
+        public string Sku { get; set; } = "";
+        public int PhysicalQty { get; set; }
+        public int ReservedQty { get; set; }
+        public int AvailableQty { get; set; }
+        public decimal CostPrice { get; set; }
+        public decimal StockValue { get; set; }
+        public bool IsLowStock { get; set; }
+    }
+
+    // DTOs for Stock endpoints
+    namespace PosSystem.Models.Dtos
+    {
+        public class ReceiveStockDto { }
+        public class AdjustStockDto { }
+    }
+}

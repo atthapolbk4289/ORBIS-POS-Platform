@@ -1,0 +1,135 @@
+@using PosSystem.Controllers
+@model System.Collections.Generic.List<ProductsController.ProductRow>
+@{
+  Layout = "_Layout";
+  var categories = ViewData["Categories"] as System.Collections.Generic.List<ProductsController.CategoryOption> ?? new();
+  var openCreate = (ViewData["OpenCreate"] as bool?) == true;
+}
+<div class="space-y-6">
+  @if (TempData["Success"] != null)
+  {
+    <div class="rounded-lg bg-green-50 text-green-700 px-4 py-3 text-sm">@TempData["Success"]</div>
+  }
+  @if (TempData["Error"] != null)
+  {
+    <div class="rounded-lg bg-red-50 text-red-700 px-4 py-3 text-sm">@TempData["Error"]</div>
+  }
+  <div class="flex justify-between items-center">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800">จัดการสินค้าหน้าร้าน</h2>
+      <p class="text-sm text-gray-500 mt-1">กำหนดราคาขาย หมวดหมู่ และรายละเอียดสินค้าที่แสดงหน้าจอ POS</p>
+    </div>
+    <div class="flex gap-2">
+      <a asp-action="Categories" class="px-4 py-2 rounded-lg text-gray-700 bg-white border text-sm font-medium inline-block hover:bg-gray-50">
+        จัดการหมวดหมู่
+      </a>
+      <a asp-action="Index" asp-route-openCreate="true" class="px-4 py-2 rounded-lg text-white text-sm font-medium inline-block transition-all hover:opacity-90" style="background:#2D6BE4">
+        + เพิ่มสินค้า
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="bg-white rounded-xl p-4 shadow-sm flex gap-3 items-center">
+    <input type="text" placeholder="ค้นหาสินค้า, บาร์โค้ด..." class="flex-1 px-3 py-2 border rounded-lg text-sm"/>
+    <select class="px-3 py-2 border rounded-lg text-sm text-gray-600">
+      <option>ทุกหมวดหมู่</option>
+    </select>
+    <select class="px-3 py-2 border rounded-lg text-sm text-gray-600">
+      <option>ทุกสถานะ</option>
+      <option>เปิดขาย</option>
+      <option>ปิดขาย</option>
+    </select>
+    <button class="px-4 py-2 rounded-lg text-white text-sm" style="background:#2D6BE4">ค้นหา</button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead style="background:#F8FAFC">
+        <tr class="text-left text-xs text-gray-500 uppercase">
+          <th class="px-5 py-3">สินค้า</th>
+          <th class="px-5 py-3">SKU</th>
+          <th class="px-5 py-3">หมวดหมู่</th>
+          <th class="px-5 py-3">ต้นทุน</th>
+          <th class="px-5 py-3">ราคาขาย</th>
+          <th class="px-5 py-3">ประเภท</th>
+          <th class="px-5 py-3">สถานะ</th>
+          <th class="px-5 py-3 text-right">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (Model != null && Model.Count > 0)
+        {
+          @foreach (var p in Model)
+          {
+            <tr class="border-t hover:bg-gray-50">
+              <td class="px-5 py-3 font-medium text-gray-800">@p.Name</td>
+              <td class="px-5 py-3 text-gray-600">@p.Sku</td>
+              <td class="px-5 py-3 text-gray-600">@(p.CategoryName ?? "-")</td>
+              <td class="px-5 py-3">฿@p.CostPrice.ToString("N2")</td>
+              <td class="px-5 py-3 text-blue-700 font-semibold">฿@p.Price.ToString("N2")</td>
+              <td class="px-5 py-3 text-gray-600">@p.ProductType</td>
+              <td class="px-5 py-3">
+                <span class="px-2 py-1 text-xs rounded-full @(p.IsActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")">
+                  @(p.IsActive ? "เปิดขาย" : "ปิดขาย")
+                </span>
+              <td class="px-5 py-3 text-right space-x-1">
+                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('ปิดการใช้งานสินค้านี้?')">
+                  <input type="hidden" name="id" value="@p.Id" />
+                  <button type="submit" class="p-1.5 text-gray-400 hover:text-red-500 transition-colors">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </form>
+              </td>
+            </tr>
+          }
+        }
+        else
+        {
+          <tr><td colspan="7" class="px-5 py-12 text-center text-gray-400">
+            <i data-lucide="shopping-cart" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+            <p>ยังไม่มีสินค้าหน้าร้าน</p>
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="create-product-modal" class="@(openCreate ? "" : "hidden") fixed inset-0 bg-black/40 z-40">
+  <div class="max-w-2xl w-full bg-white rounded-xl shadow-xl p-5 mx-auto mt-16">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-800">เพิ่มสินค้าใหม่</h3>
+      <a asp-action="Index" class="text-gray-400">✕</a>
+    </div>
+    <form method="post" asp-action="Create" class="grid grid-cols-2 gap-3">
+      <input name="Name" required placeholder="ชื่อสินค้า" class="col-span-2 px-3 py-2 border rounded-lg text-sm" />
+      <select name="CategoryId" required class="px-3 py-2 border rounded-lg text-sm">
+        @foreach (var c in categories)
+        {
+          <option value="@c.Id">@c.Name</option>
+        }
+      </select>
+      <input name="Sku" placeholder="SKU (เว้นว่างให้ระบบสร้างอัตโนมัติ)" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="Barcode" placeholder="Barcode" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="Unit" placeholder="หน่วย (เช่น ชิ้น, กล่อง)" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="CostPrice" type="number" min="0" step="0.01" placeholder="ต้นทุน" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="Price" type="number" min="0" step="0.01" placeholder="ราคาขาย" class="px-3 py-2 border rounded-lg text-sm" />
+      <select name="ProductType" class="px-3 py-2 border rounded-lg text-sm">
+        <option value="TRACKABLE_STOCK">TRACKABLE_STOCK</option>
+        <option value="NON_TRACKABLE">NON_TRACKABLE</option>
+        <option value="SERVICE">SERVICE</option>
+      </select>
+      <input name="InitialQty" type="number" min="0" value="0" placeholder="สต็อกเริ่มต้น" class="px-3 py-2 border rounded-lg text-sm" />
+      <input name="MinAlertQty" type="number" min="0" value="5" placeholder="แจ้งเตือนขั้นต่ำ" class="px-3 py-2 border rounded-lg text-sm" />
+      <label class="col-span-2 flex items-center gap-2 text-sm text-gray-700">
+        <input type="checkbox" name="IsActive" checked value="true" />
+        เปิดขายทันที
+      </label>
+      <div class="col-span-2 flex justify-end gap-2 pt-2">
+        <a asp-action="Index" class="px-4 py-2 border rounded-lg text-sm inline-block">ยกเลิก</a>
+        <button type="submit" class="px-4 py-2 rounded-lg text-white text-sm" style="background:#2D6BE4">บันทึก</button>
+      </div>
+    </form>
+  </div>
+</div>

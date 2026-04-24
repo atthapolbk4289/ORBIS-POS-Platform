@@ -1,0 +1,186 @@
+@model PosSystem.Models.ViewModels.PosViewModel
+@{ Layout = "_Layout"; }
+<!-- ตัวอย่าง POS Screen — Split Layout -->
+
+<div class="flex gap-4 h-full" style="height: calc(100vh - 120px)">
+  
+  <!-- LEFT: Product Grid (60%) -->
+  <div class="flex-1 flex flex-col">
+    <!-- Search + Category Filter -->
+    <div class="bg-white rounded-xl p-3 mb-3 shadow-sm">
+      <input id="productSearch" type="text" placeholder="🔍 ค้นหาสินค้า หรือสแกนบาร์โค้ด..."
+             class="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+             oninput="filterProducts(this.value)" />
+    </div>
+    
+    <!-- Category Tabs -->
+    <div class="flex gap-2 mb-3 overflow-x-auto pb-1">
+      <button onclick="filterCategory('all')" id="cat-all"
+              class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all bg-blue-800 text-white">
+        ทั้งหมด
+      </button>
+      @foreach (var cat in Model.Categories) {
+        <button onclick="filterCategory('@cat.Id')" id="cat-@cat.Id"
+                class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all bg-white text-gray-700 hover:bg-blue-50 border">
+          @cat.Name
+        </button>
+      }
+    </div>
+    
+    <!-- Product Cards Grid -->
+    <div id="productGrid" class="flex-1 overflow-y-auto grid grid-cols-3 xl:grid-cols-4 gap-3 content-start">
+      <!-- Products loaded via AJAX -->
+    </div>
+  </div>
+  
+  <!-- RIGHT: Cart Panel (40%) -->
+  <div class="w-80 xl:w-96 flex flex-col bg-white rounded-xl shadow-sm overflow-hidden">
+    
+    <!-- Order Type Toggle -->
+    <div class="p-4 border-b">
+      <div class="flex rounded-lg overflow-hidden border text-sm">
+        <button onclick="setOrderType('DINE_IN')"   id="type-DINE_IN"
+                class="flex-1 py-2 text-center font-medium order-type-btn active">🍽️ โต๊ะ</button>
+        <button onclick="setOrderType('TAKEAWAY')"  id="type-TAKEAWAY"
+                class="flex-1 py-2 text-center font-medium order-type-btn border-l">🥡 Takeaway</button>
+        <button onclick="setOrderType('RETAIL')"    id="type-RETAIL"
+                class="flex-1 py-2 text-center font-medium order-type-btn border-l">🛒 ค้าปลีก</button>
+      </div>
+      
+      <!-- Table Selector (DINE_IN only) -->
+      <div id="tableSelectorRow" class="mt-2">
+        <button onclick="openTableModal()" id="tableBtn"
+                class="w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm text-gray-600 hover:border-blue-500">
+          <span id="tableLabel">เลือกโต๊ะ</span>
+          <i data-lucide="chevron-down" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Cart Items (scrollable) -->
+    <div id="cartItems" class="flex-1 overflow-y-auto p-3 space-y-2">
+      <div id="emptyCart" class="text-center py-8 text-gray-400">
+        <i data-lucide="shopping-cart" class="w-12 h-12 mx-auto mb-2 opacity-30"></i>
+        <p class="text-sm">ยังไม่มีรายการ</p>
+      </div>
+    </div>
+    
+    <!-- Promotion -->
+    <div class="px-4 py-2 border-t border-b">
+      <input id="promoCode" type="text" placeholder="ใส่โค้ดโปรโมชั่น"
+             class="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+             onkeydown="if(event.key==='Enter') applyPromotion()" />
+    </div>
+    
+    <!-- Price Summary -->
+    <div class="p-4 space-y-1 text-sm border-b">
+      <div class="flex justify-between text-gray-600">
+        <span>ยอดรวม</span><span id="summarySubtotal">฿0.00</span>
+      </div>
+      <div class="flex justify-between text-red-500" id="discountRow" style="display:none!important">
+        <span>ส่วนลด</span><span id="summaryDiscount">-฿0.00</span>
+      </div>
+      <div class="flex justify-between text-gray-600">
+        <span>VAT 7%</span><span id="summaryTax">฿0.00</span>
+      </div>
+      <div class="flex justify-between font-bold text-lg text-gray-800 pt-2 border-t">
+        <span>ยอดสุทธิ</span><span id="summaryTotal">฿0.00</span>
+      </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="p-4 grid grid-cols-2 gap-2">
+      <button onclick="confirmOrder()" id="btnKitchen"
+              class="py-3 rounded-lg text-white text-sm font-semibold transition-all"
+              style="background:#2D6BE4">ส่งครัว</button>
+      <button onclick="openPayment()"
+              class="py-3 rounded-lg text-white text-sm font-semibold transition-all"
+              style="background:#10B981">ชำระเงิน</button>
+      <button onclick="cancelOrder()"
+              class="col-span-2 py-2 rounded-lg text-red-500 text-sm border border-red-200 hover:bg-red-50">
+        ยกเลิก Order
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Table Modal -->
+<div id="tableModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+  <div class="bg-white rounded-xl p-6 w-[480px] max-h-[70vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-semibold text-gray-800">เลือกโต๊ะ</h3>
+      <button onclick="closeTableModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <div id="tableGrid" class="grid grid-cols-4 gap-3">
+      @foreach (var table in Model.Tables) {
+        <button onclick="selectTable('@table.Id','@table.TableNumber','@table.Status')"
+                class="p-3 rounded-xl border-2 text-center text-sm transition-all
+                       @(table.Status=="AVAILABLE" ? "border-green-400 hover:bg-green-50 cursor-pointer" :
+                         table.Status=="OCCUPIED"  ? "border-red-400 bg-red-50 cursor-not-allowed" :
+                         "border-gray-300 bg-gray-50")">
+          <div class="text-lg font-bold @(table.Status=="AVAILABLE"?"text-green-600":table.Status=="OCCUPIED"?"text-red-600":"text-gray-500")">
+            @table.TableNumber
+          </div>
+          <div class="text-xs @(table.Status=="AVAILABLE"?"text-green-500":"text-red-400")">
+            @(table.Status=="AVAILABLE"?"ว่าง":table.Status=="OCCUPIED"?"มีลูกค้า":table.Status)
+          </div>
+        </button>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+  <div class="bg-white rounded-xl p-6 w-[440px]">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-semibold">ชำระเงิน</h3>
+      <button onclick="closePayment()">✕</button>
+    </div>
+    <div class="text-center mb-4">
+      <p class="text-gray-500 text-sm">ยอดที่ต้องชำระ</p>
+      <p id="payTotal" class="text-3xl font-bold text-gray-800">฿0.00</p>
+    </div>
+    <!-- Payment Method Tabs -->
+    <div class="grid grid-cols-4 gap-2 mb-4 text-xs">
+      <button onclick="setPayMethod('CASH', this)"         class="pay-method-btn py-2 rounded-lg border text-center font-medium bg-blue-50 border-blue-500">💵 เงินสด</button>
+      <button onclick="setPayMethod('CREDIT_CARD', this)"  class="pay-method-btn py-2 rounded-lg border text-center font-medium">💳 บัตร</button>
+      <button onclick="setPayMethod('PROMPTPAY', this)"    class="pay-method-btn py-2 rounded-lg border text-center font-medium">📱 QR</button>
+      <button onclick="setPayMethod('BANK_TRANSFER', this)" class="pay-method-btn py-2 rounded-lg border text-center font-medium">🏦 โอน</button>
+    </div>
+    <!-- Cash fields -->
+    <div id="cashFields" class="space-y-3 mb-4">
+      <div>
+        <label class="text-xs text-gray-500">รับมา</label>
+        <input id="cashReceived" type="number" class="w-full px-3 py-2 border rounded-lg text-lg font-bold"
+               oninput="calcChange()" placeholder="0.00" />
+      </div>
+      <div class="flex justify-between items-center bg-green-50 rounded-lg p-3">
+        <span class="text-sm text-gray-600">เงินทอน</span>
+        <span id="changeAmount" class="text-xl font-bold text-green-600">฿0.00</span>
+      </div>
+    </div>
+    <!-- Ref number fields (card/transfer) -->
+    <div id="refFields" class="hidden mb-4">
+      <label class="text-xs text-gray-500">เลขอ้างอิง / สลิป</label>
+      <input id="refNumber" type="text" class="w-full px-3 py-2 border rounded-lg" placeholder="กรอกเลขอ้างอิง" />
+    </div>
+    <button onclick="processPayment()"
+            class="w-full py-3 rounded-xl text-white font-semibold text-base"
+            style="background:#10B981">✓ ยืนยันชำระเงิน</button>
+  </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/dexie/dist/dexie.min.js"></script>
+<script src="~/js/pos.js"></script>
+<script>
+// Initialize POS with branch data
+const POS_CONFIG = {
+  branchId: '@User.FindFirst("BranchId")?.Value',
+  userId: '@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value',
+  taxRate: 7
+};
+initPOS(POS_CONFIG);
+</script>
+}

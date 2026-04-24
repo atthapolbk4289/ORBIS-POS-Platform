@@ -1,0 +1,50 @@
+@{ Layout = "_Layout"; }
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800">จัดการสินค้าต้นทุน</h2>
+      <p class="text-sm text-gray-500 mt-1">กำหนดราคาทุน สูตรวัตถุดิบ และ BOM (Bill of Materials)</p>
+    </div>
+    <button class="px-4 py-2 rounded-lg text-white text-sm font-medium" style="background:#2D6BE4">
+      + เพิ่มสินค้าต้นทุน
+    </button>
+  </div>
+
+  <div class="grid grid-cols-3 gap-5">
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-500">ต้นทุนเฉลี่ย</p>
+      <p class="text-2xl font-bold text-gray-800 mt-1">฿0.00</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-500">กำไรขั้นต้นเฉลี่ย</p>
+      <p class="text-2xl font-bold text-green-600 mt-1">0%</p>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <p class="text-xs text-gray-500">สินค้าที่ขาดทุน</p>
+      <p class="text-2xl font-bold text-red-600 mt-1">0</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b">
+      <h3 class="font-semibold text-gray-800">รายการสินค้าและต้นทุน</h3>
+    </div>
+    <table class="w-full text-sm">
+      <thead style="background:#F8FAFC">
+        <tr class="text-left text-xs text-gray-500 uppercase">
+          <th class="px-5 py-3">สินค้า</th>
+          <th class="px-5 py-3 text-right">ราคาทุน</th>
+          <th class="px-5 py-3 text-right">ราคาขาย</th>
+          <th class="px-5 py-3 text-right">กำไร%</th>
+          <th class="px-5 py-3">จัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="5" class="px-5 py-12 text-center text-gray-400">
+          <i data-lucide="dollar-sign" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+          <p>ยังไม่มีข้อมูลต้นทุน</p>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

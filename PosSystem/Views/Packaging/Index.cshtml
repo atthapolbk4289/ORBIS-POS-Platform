@@ -1,0 +1,35 @@
+@{ Layout = "_Layout"; }
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800">แบ่งบรรจุสินค้า</h2>
+      <p class="text-sm text-gray-500 mt-1">จัดการการแบ่งบรรจุสินค้าสำหรับจำหน่าย</p>
+    </div>
+    <button class="px-4 py-2 rounded-lg text-white text-sm font-medium" style="background:#2D6BE4">
+      + สร้างใบแบ่งบรรจุ
+    </button>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div class="px-5 py-4 border-b">
+      <h3 class="font-semibold text-gray-800">รายการแบ่งบรรจุ</h3>
+    </div>
+    <table class="w-full text-sm">
+      <thead style="background:#F8FAFC">
+        <tr class="text-left text-xs text-gray-500 uppercase">
+          <th class="px-5 py-3">เลขที่</th>
+          <th class="px-5 py-3">สินค้าต้นทาง</th>
+          <th class="px-5 py-3">สินค้าปลายทาง</th>
+          <th class="px-5 py-3">จำนวน</th>
+          <th class="px-5 py-3">วันที่</th>
+          <th class="px-5 py-3">สถานะ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" class="px-5 py-12 text-center text-gray-400">
+          <i data-lucide="boxes" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+          <p>ยังไม่มีรายการแบ่งบรรจุ</p>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

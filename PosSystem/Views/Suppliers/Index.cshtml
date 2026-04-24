@@ -1,0 +1,106 @@
+@model System.Collections.Generic.List<PosSystem.Controllers.SuppliersController.SupplierRow>
+@{ Layout = "_Layout"; }
+
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-bold text-gray-800">จัดการผู้จำหน่าย (Suppliers)</h2>
+            <p class="text-sm text-gray-500 mt-1">รายชื่อบริษัทหรือร้านค้าที่สั่งซื้อสินค้าเข้าสต็อก</p>
+        </div>
+        <button onclick="document.getElementById('create-supplier-modal').classList.remove('hidden')" 
+                class="px-4 py-2 rounded-lg text-white text-sm font-medium transition-all hover:opacity-90" style="background:#2D6BE4">
+            + เพิ่มผู้จำหน่าย
+        </button>
+    </div>
+
+    @if (TempData["Success"] != null) {
+        <div class="rounded-lg bg-green-50 text-green-700 px-4 py-3 text-sm">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null) {
+        <div class="rounded-lg bg-red-50 text-red-700 px-4 py-3 text-sm">@TempData["Error"]</div>
+    }
+
+    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+            <thead style="background:#F8FAFC">
+                <tr class="text-left text-xs text-gray-500 uppercase font-semibold">
+                    <th class="px-5 py-3">ชื่อบริษัท/ผู้จำหน่าย</th>
+                    <th class="px-5 py-3">ผู้ติดต่อ</th>
+                    <th class="px-5 py-3">เบอร์โทร</th>
+                    <th class="px-5 py-3">สถานะ</th>
+                    <th class="px-5 py-3 text-right">จัดการ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Count > 0) {
+                    @foreach (var s in Model) {
+                        <tr class="border-t hover:bg-gray-50">
+                            <td class="px-5 py-3 font-medium text-gray-800">@s.Name</td>
+                            <td class="px-5 py-3 text-gray-600">@(s.ContactName ?? "-")</td>
+                            <td class="px-5 py-3 text-gray-600">@(s.Phone ?? "-")</td>
+                            <td class="px-5 py-3">
+                                <span class="px-2 py-1 text-xs rounded-full @(s.IsActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")">
+                                    @(s.IsActive ? "ปกติ" : "ระงับ")
+                                </span>
+                            </td>
+                            <td class="px-5 py-3 text-right space-x-2">
+                                <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('ยืนยันการระงับผู้จำหน่ายนี้?')">
+                                    <input type="hidden" name="id" value="@s.Id" />
+                                    <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                } else {
+                    <tr>
+                        <td colspan="5" class="px-5 py-12 text-center text-gray-400">
+                            <i data-lucide="truck" class="w-10 h-10 mx-auto mb-2 opacity-30"></i>
+                            <p>ยังไม่มีข้อมูลผู้จำหน่าย</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="create-supplier-modal" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-800">เพิ่มผู้จำหน่ายใหม่</h3>
+            <button onclick="document.getElementById('create-supplier-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="Create" method="post" class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+                <label class="block text-xs text-gray-500 mb-1">ชื่อบริษัท / ร้านค้า</label>
+                <input name="Name" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">ชื่อผู้ติดต่อ</label>
+                <input name="ContactName" class="w-full px-3 py-2 border rounded-lg text-sm outline-none" />
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">เบอร์โทรศัพท์</label>
+                <input name="Phone" class="w-full px-3 py-2 border rounded-lg text-sm outline-none" />
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">อีเมล</label>
+                <input name="Email" type="email" class="w-full px-3 py-2 border rounded-lg text-sm outline-none" />
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">เลขประจำตัวผู้เสียภาษี</label>
+                <input name="TaxId" class="w-full px-3 py-2 border rounded-lg text-sm outline-none" />
+            </div>
+            <div class="col-span-2">
+                <label class="block text-xs text-gray-500 mb-1">ที่อยู่</label>
+                <textarea name="Address" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm outline-none"></textarea>
+            </div>
+            <div class="col-span-2 flex justify-end gap-2 pt-2">
+                <button type="button" onclick="document.getElementById('create-supplier-modal').classList.add('hidden')" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-all">ยกเลิก</button>
+                <button type="submit" class="px-4 py-2 text-sm text-white rounded-lg font-medium transition-all" style="background:#2D6BE4">บันทึกข้อมูล</button>
+            </div>
+        </form>
+    </div>
+</div>

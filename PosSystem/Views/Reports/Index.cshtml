@@ -1,0 +1,21 @@
+@{ Layout = "_Layout"; }
+<div class="space-y-6">
+  <h2 class="text-xl font-bold text-gray-800">รายงาน</h2>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    @foreach (var r in new[] {
+      ("bar-chart-3","รายงานยอดขาย","สรุปยอดขายรายวัน/เดือน","text-blue-600","bg-blue-50"),
+      ("package","รายงานสต็อก","ความเคลื่อนไหวสินค้าคงคลัง","text-amber-600","bg-amber-50"),
+      ("users","รายงานลูกค้า","วิเคราะห์พฤติกรรมลูกค้า","text-green-600","bg-green-50"),
+      ("dollar-sign","รายงานกำไร-ขาดทุน","Profit & Loss Statement","text-purple-600","bg-purple-50")
+    }) {
+      <div class="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer border hover:border-blue-300">
+        <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-3 @r.Item5">
+          <i data-lucide="@r.Item1" class="w-6 h-6 @r.Item4"></i>
+        </div>
+        <h3 class="font-semibold text-gray-800">@r.Item2</h3>
+        <p class="text-xs text-gray-500 mt-1">@r.Item3</p>
+        <button class="mt-4 text-xs text-blue-600 hover:underline">ดูรายงาน →</button>
+      </div>
+    }
+  </div>
+</div>
