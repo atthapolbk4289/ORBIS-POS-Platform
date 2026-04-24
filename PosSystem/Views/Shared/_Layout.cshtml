@@ -11,27 +11,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style type="text/tailwindcss">
     body { font-family: 'Noto Sans Thai', sans-serif; }
-    .sidebar-item { @@apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer; }
-    .sidebar-item.active { @@apply bg-blue-100 text-blue-700 font-semibold; }
+    .sidebar-item { @@apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-blue-100 hover:bg-white/10 hover:text-white transition-all cursor-pointer; }
+    .sidebar-item.active { @@apply bg-white text-blue-700 font-bold shadow-lg shadow-blue-900/20; }
     .sidebar-submenu { @@apply ml-7 space-y-1 mt-1; }
-    .sidebar-submenu a { @@apply flex items-center gap-2 px-3 py-2 rounded text-xs text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all; }
-    .sidebar-submenu a.active { @@apply bg-blue-50 text-blue-600 font-medium; }
+    .sidebar-submenu a { @@apply flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-blue-200 hover:bg-white/10 hover:text-white transition-all; }
+    .sidebar-submenu a.active { @@apply bg-blue-500/30 text-white font-semibold; }
   </style>
 </head>
-<body class="bg-white flex h-screen overflow-hidden">
+<body class="bg-slate-50 flex h-screen overflow-hidden">
 
   <!-- ════ SIDEBAR ════ -->
-  <aside class="w-64 flex-shrink-0 flex flex-col border-r border-slate-100 bg-slate-50/50 overflow-y-auto">
+  <aside class="w-64 flex-shrink-0 flex flex-col bg-blue-700 shadow-2xl shadow-blue-900/50 overflow-y-auto relative z-20">
+    <!-- Gradient Overlay for Depth -->
+    <div class="absolute inset-0 bg-gradient-to-b from-blue-600/50 to-blue-800/50 pointer-events-none"></div>
+
     <!-- Logo -->
-    <div class="flex items-center gap-3 px-6 py-6">
-      <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
-        <i data-lucide="layers" class="w-5 h-5"></i>
+    <div class="relative z-10 flex items-center gap-3 px-6 py-8">
+      <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-700 shadow-xl">
+        <i data-lucide="layers" class="w-6 h-6"></i>
       </div>
-      <span class="text-slate-800 text-lg font-bold tracking-tight">ORBIS POS</span>
+      <div class="flex flex-col">
+        <span class="text-white text-xl font-black tracking-tight leading-none">ORBIS POS</span>
+        <span class="text-blue-200 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Management</span>
+      </div>
     </div>
     
     <!-- Menu -->
-    <nav class="flex-1 px-4 py-2 space-y-1">
+    <nav class="relative z-10 flex-1 px-4 py-2 space-y-1">
       
       <!-- แผงควบคุม -->
       <a asp-controller="Dashboard" asp-action="Index" 
@@ -40,6 +46,10 @@
         <span>แผงควบคุม</span>
       </a>
       
+      <div class="pt-4 pb-2 px-4">
+        <span class="text-[10px] font-bold text-blue-300/60 uppercase tracking-widest">การจัดการสต็อก</span>
+      </div>
+
       <!-- สต็อก (expandable) -->
       <div x-data="{ open: @(ViewData["ActiveMenu"]?.ToString()?.StartsWith("stock") == true ? "true" : "false") }">
         <button @@click="open=!open" 
@@ -66,12 +76,9 @@
       <a asp-controller="Packaging" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="packaging"?"active":"")">
         <i data-lucide="boxes" class="w-4 h-4"></i><span>แบ่งบรรจุสินค้า</span>
       </a>
-      <a asp-controller="Stock" asp-action="Receive" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="receive"?"active":"")">
-        <i data-lucide="package-check" class="w-4 h-4"></i><span>รับสินค้า</span>
-      </a>
       
       <div class="pt-4 pb-2 px-4">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ระบบร้านค้า</span>
+        <span class="text-[10px] font-bold text-blue-300/60 uppercase tracking-widest">ระบบร้านค้า</span>
       </div>
 
       <a asp-controller="Accounting" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="accounting"?"active":"")">
@@ -86,23 +93,6 @@
       <a asp-controller="Cost" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="cost"?"active":"")">
         <i data-lucide="dollar-sign" class="w-4 h-4"></i><span>จัดการสินค้าต้นทุน</span>
       </a>
-      <a asp-controller="Branches" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="branches"?"active":"")">
-        <i data-lucide="building" class="w-4 h-4"></i><span>จัดการสาขา</span>
-      </a>
-      
-      <!-- จัดการสิทธิ์ (expandable) -->
-      <div x-data="{ open: false }">
-        <button @@click="open=!open" class="sidebar-item w-full justify-between">
-          <div class="flex items-center gap-3">
-            <i data-lucide="shield" class="w-4 h-4"></i><span>จัดการสิทธิ์</span>
-          </div>
-          <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-200" :class="open?'rotate-180':''"></i>
-        </button>
-        <div x-show="open" class="sidebar-submenu">
-          <a asp-controller="Users" asp-action="Index">จัดการผู้ใช้</a>
-          <a asp-controller="Users" asp-action="Roles">กำหนดสิทธิ์</a>
-        </div>
-      </div>
       
       <!-- หน้าร้าน (expandable) -->
       <div x-data="{ open: @(ViewData["ActiveMenu"]?.ToString()=="pos" ? "true" : "false") }">
@@ -117,11 +107,19 @@
           <a asp-controller="DiningTables" asp-action="Index">จัดการโต๊ะอาหาร</a>
         </div>
       </div>
+
+      <div class="pt-4 pb-2 px-4">
+        <span class="text-[10px] font-bold text-blue-300/60 uppercase tracking-widest">ตั้งค่าและรายงาน</span>
+      </div>
+
       <a asp-controller="Reports" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="reports"?"active":"")">
         <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>รายงาน</span>
       </a>
       <a asp-controller="Customers" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="customers"?"active":"")">
         <i data-lucide="user-check" class="w-4 h-4"></i><span>ลูกค้า</span>
+      </a>
+      <a asp-controller="Branches" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="branches"?"active":"")">
+        <i data-lucide="building" class="w-4 h-4"></i><span>จัดการสาขา</span>
       </a>
     </nav>
   </aside>
@@ -130,53 +128,80 @@
   <div class="flex-1 flex flex-col overflow-hidden">
     
     <!-- TOPBAR -->
-    <header class="bg-white border-b border-slate-100 flex items-center justify-between px-8 py-4 flex-shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+    <header class="bg-white border-b border-slate-200 flex items-center justify-between px-8 py-5 flex-shrink-0 relative z-10">
+      <div class="flex items-center gap-4">
+        <div class="p-2.5 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
            <i data-lucide="@(ViewData["TopIcon"]?.ToString() ?? "layout-dashboard")" class="w-5 h-5"></i>
         </div>
-        <span class="text-slate-800 font-semibold text-lg">@ViewData["PageTitle"]</span>
+        <div class="flex flex-col">
+          <span class="text-slate-800 font-bold text-lg leading-none">@ViewData["PageTitle"]</span>
+          <nav class="flex text-[10px] text-slate-400 font-bold uppercase mt-1.5 tracking-wider">
+             <span class="hover:text-blue-600 cursor-pointer">หน้าหลัก</span>
+             <span class="mx-2">/</span>
+             <span class="text-blue-600">@ViewData["PageTitle"]</span>
+          </nav>
+        </div>
       </div>
-      <div class="flex items-center gap-5">
+      <div class="flex items-center gap-6">
         <!-- Offline Indicator -->
         <div id="offlineIndicator" class="hidden bg-rose-50 text-rose-600 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-rose-100">
           ⚠️ Offline
         </div>
+        
+        <!-- Search Bar -->
+        <div class="hidden xl:flex items-center bg-slate-100 rounded-xl px-4 py-2 border border-transparent focus-within:border-blue-200 focus-within:bg-white transition-all w-64">
+           <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+           <input type="text" placeholder="ค้นหาข้อมูล..." class="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full text-slate-600" />
+        </div>
+
+        <div class="h-8 w-px bg-slate-200"></div>
+
         <!-- Notifications -->
         <button class="relative p-2.5 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
           <i data-lucide="bell" class="w-5 h-5 text-slate-500"></i>
-          <span id="stockAlertBadge" class="hidden absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>
+          <span id="stockAlertBadge" class="hidden absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>
         </button>
-        
-        <div class="h-6 w-px bg-slate-200"></div>
 
         <!-- User Dropdown -->
         <div x-data="{ open: false }" class="relative">
-          <button @@click="open=!open" class="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
-            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-md shadow-blue-100 bg-blue-600">
-              @(User.Identity?.Name?.FirstOrDefault().ToString() ?? "U")
+          <button @@click="open=!open" class="flex items-center gap-3 p-1 rounded-2xl hover:bg-slate-50 transition-all">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-xl shadow-blue-200 bg-blue-600 overflow-hidden">
+              @if(User.Identity?.Name != null) {
+                <span class="z-10">@(User.Identity.Name.FirstOrDefault())</span>
+              } else {
+                <i data-lucide="user" class="w-5 h-5"></i>
+              }
             </div>
-            <div class="text-left hidden sm:block">
-               <p class="text-xs font-bold text-slate-800 leading-none">@User.Identity?.Name</p>
-               <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">เข้าใช้งานล่าสุด</p>
+            <div class="text-left hidden sm:block pr-2">
+               <p class="text-xs font-black text-slate-800 leading-none">@User.Identity?.Name</p>
+               <div class="flex items-center gap-1 mt-1">
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                  <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Online</p>
+               </div>
             </div>
             <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" :class="open?'rotate-180':''"></i>
           </button>
           <div x-show="open" @@click.away="open=false"
-               x-transition:enter="transition ease-out duration-100"
-               x-transition:enter-start="opacity-0 scale-95"
-               x-transition:enter-end="opacity-100 scale-100"
-               class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 z-50 p-2">
-            <a asp-controller="Account" asp-action="Profile" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+               x-transition:enter="transition ease-out duration-200"
+               x-transition:enter-start="opacity-0 translate-y-2"
+               x-transition:enter-end="opacity-100 translate-y-0"
+               class="absolute right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl shadow-slate-300/50 border border-slate-100 z-50 p-3">
+            
+            <div class="px-4 py-4 mb-2 bg-blue-50 rounded-2xl">
+               <p class="text-blue-700 font-bold text-sm">@User.Identity?.Name</p>
+               <p class="text-blue-500 text-[10px] font-medium mt-0.5">@User.FindFirst("Role")?.Value</p>
+            </div>
+
+            <a asp-controller="Account" asp-action="Profile" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all">
               <i data-lucide="user" class="w-4 h-4"></i> โปรไฟล์ส่วนตัว
             </a>
-            <a asp-controller="Settings" asp-action="Index" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+            <a asp-controller="Settings" asp-action="Index" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all">
               <i data-lucide="settings" class="w-4 h-4"></i> ตั้งค่าระบบ
             </a>
-            <div class="my-1 border-t border-slate-50"></div>
+            <div class="my-2 border-t border-slate-50"></div>
             <form asp-controller="Account" asp-action="Logout" method="post">
               @Html.AntiForgeryToken()
-              <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+              <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-500 hover:bg-rose-50 rounded-xl transition-all font-bold">
                 <i data-lucide="log-out" class="w-4 h-4"></i> ออกจากระบบ
               </button>
             </form>
@@ -186,8 +211,13 @@
     </header>
     
     <!-- PAGE CONTENT -->
-    <main class="flex-1 overflow-y-auto p-8 bg-white">
-      @RenderBody()
+    <main class="flex-1 overflow-y-auto p-8 relative">
+       <!-- Subtle Background Pattern -->
+       <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none"></div>
+       
+       <div class="relative z-10">
+          @RenderBody()
+       </div>
     </main>
   </div>
 
