@@ -11,24 +11,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style type="text/tailwindcss">
     body { font-family: 'Noto Sans Thai', sans-serif; }
-    .sidebar-item { @@apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-blue-100 hover:bg-blue-800 transition-all cursor-pointer; }
-    .sidebar-item.active { @@apply bg-white text-blue-900 font-semibold; }
+    .sidebar-item { @@apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer; }
+    .sidebar-item.active { @@apply bg-blue-100 text-blue-700 font-semibold; }
     .sidebar-submenu { @@apply ml-7 space-y-1 mt-1; }
-    .sidebar-submenu a { @@apply flex items-center gap-2 px-3 py-2 rounded text-xs text-blue-200 hover:bg-blue-700 transition-all; }
-    .sidebar-submenu a.active { @@apply bg-blue-600 text-white; }
+    .sidebar-submenu a { @@apply flex items-center gap-2 px-3 py-2 rounded text-xs text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-all; }
+    .sidebar-submenu a.active { @@apply bg-blue-50 text-blue-600 font-medium; }
   </style>
 </head>
-<body class="bg-gray-100 flex h-screen overflow-hidden">
+<body class="bg-white flex h-screen overflow-hidden">
 
   <!-- ════ SIDEBAR ════ -->
-  <aside class="w-56 flex-shrink-0 flex flex-col overflow-y-auto" style="background:#1B3A6B">
+  <aside class="w-64 flex-shrink-0 flex flex-col border-r border-slate-100 bg-slate-50/50 overflow-y-auto">
     <!-- Logo -->
-    <div class="flex items-center gap-2 px-5 py-4 border-b border-blue-800">
-      <span class="text-white text-xl font-bold">ORBIS POS</span>
+    <div class="flex items-center gap-3 px-6 py-6">
+      <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+      </div>
+      <span class="text-slate-800 text-lg font-bold tracking-tight">ORBIS POS</span>
     </div>
     
     <!-- Menu -->
-    <nav class="flex-1 px-3 py-3 space-y-1">
+    <nav class="flex-1 px-4 py-2 space-y-1">
       
       <!-- แผงควบคุม -->
       <a asp-controller="Dashboard" asp-action="Index" 
@@ -43,11 +46,11 @@
                 class="sidebar-item w-full justify-between @(ViewData["ActiveMenu"]?.ToString()?.StartsWith("stock") == true ? "active" : "")">
           <div class="flex items-center gap-3">
             <i data-lucide="package" class="w-4 h-4"></i>
-            <span>สต็อก</span>
+            <span>คลังสินค้า</span>
           </div>
-          <i data-lucide="chevron-down" class="w-3 h-3" :class="open?'rotate-180':''"></i>
+          <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-200" :class="open?'rotate-180':''"></i>
         </button>
-        <div x-show="open" class="sidebar-submenu">
+        <div x-show="open" x-collapse class="sidebar-submenu">
           <a asp-controller="Stock" asp-action="Index" class="@(ViewData["ActiveMenu"]?.ToString()=="stock-inventory"?"active":"")">สินค้าคงคลัง</a>
           <a asp-controller="Suppliers" asp-action="Index" class="@(ViewData["ActiveMenu"]?.ToString()=="suppliers"?"active":"")">ผู้จำหน่าย (Suppliers)</a>
           <a asp-controller="Stock" asp-action="PurchaseOrders" class="@(ViewData["ActiveMenu"]?.ToString()=="stock-po"?"active":"")">ใบขอสั่งซื้อ</a>
@@ -66,6 +69,11 @@
       <a asp-controller="Stock" asp-action="Receive" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="receive"?"active":"")">
         <i data-lucide="package-check" class="w-4 h-4"></i><span>รับสินค้า</span>
       </a>
+      
+      <div class="pt-4 pb-2 px-4">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ระบบร้านค้า</span>
+      </div>
+
       <a asp-controller="Accounting" asp-action="Index" class="sidebar-item @(ViewData["ActiveMenu"]?.ToString()=="accounting"?"active":"")">
         <i data-lucide="book-open" class="w-4 h-4"></i><span>บัญชี</span>
       </a>
@@ -88,7 +96,7 @@
           <div class="flex items-center gap-3">
             <i data-lucide="shield" class="w-4 h-4"></i><span>จัดการสิทธิ์</span>
           </div>
-          <i data-lucide="chevron-down" class="w-3 h-3" :class="open?'rotate-180':''"></i>
+          <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-200" :class="open?'rotate-180':''"></i>
         </button>
         <div x-show="open" class="sidebar-submenu">
           <a asp-controller="Users" asp-action="Index">จัดการผู้ใช้</a>
@@ -102,7 +110,7 @@
           <div class="flex items-center gap-3">
             <i data-lucide="store" class="w-4 h-4"></i><span>หน้าร้าน</span>
           </div>
-          <i data-lucide="chevron-down" class="w-3 h-3" :class="open?'rotate-180':''"></i>
+          <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-200" :class="open?'rotate-180':''"></i>
         </button>
         <div x-show="open" class="sidebar-submenu">
           <a asp-controller="Pos" asp-action="Index">หน้า POS</a>
@@ -122,42 +130,53 @@
   <div class="flex-1 flex flex-col overflow-hidden">
     
     <!-- TOPBAR -->
-    <header class="bg-white shadow-sm flex items-center justify-between px-6 py-3 flex-shrink-0">
-      <div class="flex items-center gap-2 text-gray-700 font-semibold">
-        <i data-lucide="@(ViewData["TopIcon"]?.ToString() ?? "layout-dashboard")" class="w-5 h-5 text-blue-600"></i>
-        <span>@ViewData["PageTitle"]</span>
+    <header class="bg-white border-b border-slate-100 flex items-center justify-between px-8 py-4 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+           <i data-lucide="@(ViewData["TopIcon"]?.ToString() ?? "layout-dashboard")" class="w-5 h-5"></i>
+        </div>
+        <span class="text-slate-800 font-semibold text-lg">@ViewData["PageTitle"]</span>
       </div>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-5">
         <!-- Offline Indicator -->
-        <div id="offlineIndicator" class="hidden bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full font-medium">
-          ⚠️ ออฟไลน์
+        <div id="offlineIndicator" class="hidden bg-rose-50 text-rose-600 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-rose-100">
+          ⚠️ Offline
         </div>
         <!-- Notifications -->
-        <button class="relative p-2 rounded-lg hover:bg-gray-100">
-          <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
-          <span id="stockAlertBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center"></span>
+        <button class="relative p-2.5 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+          <i data-lucide="bell" class="w-5 h-5 text-slate-500"></i>
+          <span id="stockAlertBadge" class="hidden absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 border-2 border-white rounded-full"></span>
         </button>
-        <!-- Settings -->
-        <a asp-controller="Settings" asp-action="Index" class="p-2 rounded-lg hover:bg-gray-100">
-          <i data-lucide="settings" class="w-5 h-5 text-gray-600"></i>
-        </a>
+        
+        <div class="h-6 w-px bg-slate-200"></div>
+
         <!-- User Dropdown -->
         <div x-data="{ open: false }" class="relative">
-          <button @@click="open=!open" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100">
-            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style="background:#2D6BE4">
+          <button @@click="open=!open" class="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-md shadow-blue-100 bg-blue-600">
               @(User.Identity?.Name?.FirstOrDefault().ToString() ?? "U")
             </div>
-            <span class="text-sm font-medium text-gray-700">@User.Identity?.Name</span>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
+            <div class="text-left hidden sm:block">
+               <p class="text-xs font-bold text-slate-800 leading-none">@User.Identity?.Name</p>
+               <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">เข้าใช้งานล่าสุด</p>
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform" :class="open?'rotate-180':''"></i>
           </button>
           <div x-show="open" @@click.away="open=false"
-               class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-50">
-            <a asp-controller="Account" asp-action="Profile" class="flex items-center gap-2 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50">
-              <i data-lucide="user" class="w-4 h-4"></i> โปรไฟล์
+               x-transition:enter="transition ease-out duration-100"
+               x-transition:enter-start="opacity-0 scale-95"
+               x-transition:enter-end="opacity-100 scale-100"
+               class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 z-50 p-2">
+            <a asp-controller="Account" asp-action="Profile" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+              <i data-lucide="user" class="w-4 h-4"></i> โปรไฟล์ส่วนตัว
             </a>
+            <a asp-controller="Settings" asp-action="Index" class="flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+              <i data-lucide="settings" class="w-4 h-4"></i> ตั้งค่าระบบ
+            </a>
+            <div class="my-1 border-t border-slate-50"></div>
             <form asp-controller="Account" asp-action="Logout" method="post">
               @Html.AntiForgeryToken()
-              <button type="submit" class="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50">
+              <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
                 <i data-lucide="log-out" class="w-4 h-4"></i> ออกจากระบบ
               </button>
             </form>
@@ -167,7 +186,7 @@
     </header>
     
     <!-- PAGE CONTENT -->
-    <main class="flex-1 overflow-y-auto p-6">
+    <main class="flex-1 overflow-y-auto p-8 bg-white">
       @RenderBody()
     </main>
   </div>
@@ -181,3 +200,4 @@
   </script>
 </body>
 </html>
+
